@@ -1,8 +1,10 @@
 #include "Command.hpp"
 
 map<string, Command *> Command::commands = map<string, Command *>();
+const int Command::DYNAMIC = -1;
 const int Command::EXIT_TERMINAL = -3;
 const string Command::std_help_name = "help";
+const int Command::IGNORE_CMD = -2;
 
 //init help command
 Command Command::std_help_cmp = Command(Command::std_help_name,
@@ -14,15 +16,30 @@ Command Command::std_help_cmp = Command(Command::std_help_name,
 		return 0;
 	}).func(F
 	{
-		if(Command::commands.find(args[0]) == Command::commands.end())
+		if(Command::commands.find(args[args.getIndex()]) == Command::commands.end())
 		{
-			throw CommandException("no information about '" + args[0] + "'");
+			throw CommandException("no info for '" + args[args.getIndex()] + "'");
 		}
-		cout << endl;
-		Command::commands[args[0]]->show();
-		cout << endl;
+		Command *c = Command::commands[(string)args];
+		try
+		{
+			vector<string> cs;
+			while(not args.end()) //show sub commands
+			{
+				cs.push_back(c->name);
+				c = &c->getSub(args);
+			}
+			cout << endl;
+			for(auto it : cs) cout << it << " ";
+			c->show();
+			cout << endl;
+		}
+		catch(const CommandException& e)
+		{
+			cout << e.getMsg() << endl;
+		}
 		return 0;
-	}, 1);
+	}, Command::DYNAMIC);
 });
 
 Command::Command(string name, function<void(Command&)> init, char root) : name(name)
@@ -74,9 +91,17 @@ Command& Command::sub(string name)
 	return *(*subCommands)[name];
 }
 
-Command& Command::getSub(string name)
+Command& Command::getSub(string name) noexcept(false)
 {
-	return *(*subCommands)[name];
+	if(subCommands)
+	{
+		if(subCommands->find(name) != subCommands->end())
+		{
+			return *(*subCommands)[name];
+		}
+		throw SubCommandNotExistsException(name, this->name, *subCommands);
+	}
+	throw CommandException("no subCommands for '" + this->name + "' command");
 }
 
 Command& Command::func(function<int(const Tokens&)> f, int params)
@@ -114,7 +139,10 @@ int Command::run(Tokens& args) noexcept(false)
 				args.pop();
 				return (*subCommands)[args]->run(args);
 			}
-			throw SubCommandNotExistsException(subname, name, *subCommands);
+			if(not functions)
+			{
+				throw SubCommandNotExistsException(subname, name, *subCommands);
+			}
 		}
 	}
 	if(functions)
@@ -125,6 +153,13 @@ int Command::run(Tokens& args) noexcept(false)
 		{
 			return (*functions)[i](args);
 		}
+		else
+		{
+			if(functions->find(-1) != functions->end()) //unknown number of params
+			{
+				return (*functions)[-1](args);
+			}
+		}
 		throw BadCommandParametersException(name, i, *functions);
 	}
 	throw NotAFunctionalCommandException(name);
@@ -133,26 +168,89 @@ int Command::run(Tokens& args) noexcept(false)
 void Command::show(int tabs) const
 {
 	for(int i = 0; i < tabs; i++) cout << "\t";
-	cout << "\033[4m" << name << "\033[0m > ";
-	if(functions)
-	{
-		for(auto it : *functions)
-		{
-			cout << it.first << "   ";
-		}
-	}
-	else
-	{
-		cout << "do nothing";
-	}
+	cout << "\033[4m" << name << "\033[0m > " << endl;
+	showDescription(tabs + 1);
 	cout << endl;
+	showFuncs(tabs + 1);
+	cout << endl;
+	showSubs(tabs + 1);
+}
+
+void Command::showDescription(int tabs) const
+{
+	string tabs_s = "";
+	for(int i = 0; i < tabs; i++) tabs_s += "\t";
+	cout << tabs_s;
+	cout << "\033[7m Description of \033[3m'" << name << "'\033[0m"<< endl;
+	Tokens tmp_d(description, '\n');
+	while(not tmp_d.end())
+	{
+		cout << tabs_s << (string)tmp_d << endl;
+	}
+}
+
+void Command::showSubs(int tabs) const
+{
+	int i;
+	for(i = 0; i < tabs; i++) cout << "\t";
+	cout << "\033[7m Sub commands of \033[3m'" << name << "'\033[0m"<< endl; 
 	if(subCommands)
 	{
 		for(auto it : *subCommands)
 		{
-			it.second->show(tabs+1);
+			it.second->show(tabs);
 		}
 	}
+	else
+	{
+		for(i = 0; i < tabs; i++) cout << "\t";
+		cout << "no sub commands" << endl;
+	}
+}
+
+void Command::showFuncs(int tabs) const
+{
+	for(int i = 0; i < tabs; i++) cout << "\t";
+	cout << "\033[7m Prototypes of \033[3m'" << name << "' \033[0m"<< endl;
+	if(functions)
+	{
+		int n;
+		for(auto it : *functions)
+		{
+			switch(it.first)
+			{
+				int i;
+				case Command::DYNAMIC:
+					for(i = 0; i < tabs; i++) cout << "\t";
+					cout << name << "(...)" << endl;
+					break;
+
+				default:
+					for(i = 0; i < tabs; i++) cout << "\t";
+					cout << name << "(";
+					n = 0;
+					for(i = 0; i < it.first-1; i++) cout << "arg" << n++ << ", ";
+					if(i == it.first-1) cout << "arg" << n;
+					cout << ")" << endl;
+					break;
+			}
+		}
+	}
+	else
+	{
+		for(int i = 0; i < tabs; i++) cout << "\t";
+		cout << "no prototypes" << endl;
+	}
+}
+
+void Command::setDescription(string d)
+{
+	description = d;
+}
+
+string Command::getDescription() const
+{
+	return description;
 }
 
 int Command::exe(string name, Tokens& args)
@@ -184,7 +282,11 @@ Tokens Command::input()
 int Command::prompt()
 {
 	Tokens command = Command::input();
-	return Command::exe(command);
+	if(command.count())
+	{
+		return Command::exe(command);
+	}
+	return Command::IGNORE_CMD;
 }
 
 int Command::prompt(string out)
@@ -204,22 +306,6 @@ int Command::terminal(string out)
 			ret = Command::prompt(out);
 			nbCommands++;
 		}
-		catch(const NotAFunctionalCommandException& e)
-		{
-			cout << e.getMsg() << endl;
-		}
-		catch(const BadCommandParametersException& e)
-		{
-			cout << e.getMsg() << endl;
-		}
-		catch(const CommandNotExistsException& e)
-		{
-			cout << e.getMsg() << endl;
-		}
-		catch(const SubCommandNotExistsException& e)
-		{
-			cout << e.getMsg() << endl;
-		}
 		catch(const CommandException& e)
 		{
 			cout << e.getMsg() << endl;
@@ -231,10 +317,11 @@ int Command::terminal(string out)
 void Command::showAll()
 {
 	cout << endl;
+	cout << "\033[7m Commands \033[0m"<< endl << endl; 
 	for(auto it : Command::commands)
 	{
 		it.second->show();
-		cout << endl;
+		cout << endl << endl;
 	}
 	cout << endl;
 }

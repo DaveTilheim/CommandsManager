@@ -3,25 +3,42 @@
 
 int main(int argc, char const *argv[])
 {
-	Command command("show");
+	Command echo("echo");
 	Command c("quit");
 	c.func(F
 	{
 		return Command::EXIT_TERMINAL;
 	});
 
-	command.sub("all").func(F
+	echo.func(F
 	{
-		Command::showAll();
+		while(not args.end())
+		{
+			cout << (string)args << " ";
+		}
+		cout << endl;
 		return 0;
-	});
-	command.sub("nothing").func(F
+	}, Command::DYNAMIC).func(F
 	{
-		cout << "nothing :3" << endl;
+		cout << "empty echo" << endl;
 		return 0;
-	});
-	
-	cout << Command::terminal() << endl;
+	}).sub("user").func(F
+	{
+		cout << "Arthur Detrembleur" << endl;
+		return 0;
+	}).setDescription("display the app creator's name");
+
+	echo.getSub("user").sub("test").func(F
+	{
+		cout << args[0] << " " << args[1] << " " << args[2] << endl;
+		return 0;
+	}, 3);
+
+	echo.setDescription("display the command parameters\ntest new line");
+	Command brik("brik");
+	cout << Command::terminal("$[ ") << endl;
+
+
 
 	return 0;
 }

@@ -151,7 +151,7 @@ Tokens::operator vector<Token>() const
 
 string Tokens::operator[](int i) const
 {
-	return tokens[i];
+	return getToken(i);
 }
 
 ostream& operator<<(ostream& out, const Tokens& tokens)
