@@ -5,13 +5,19 @@
 
 typedef const Tokens& Args;
 #define F [](Args args)
+#define std_cmd
 
 class Command
 {
-private:
+private std_cmd:
 	static Command std_help_cmp;
-	static map<string, Command *> commands;
 	static const string std_help_name;
+	static Command std_list_cmp;
+	static const string std_list_name;
+	static Command std_exit_cmp;
+	static const string std_exit_name;
+private:
+	static map<string, Command *> commands;
 	static const int IGNORE_CMD;
 	string name;
 	string description = "no description";
@@ -30,10 +36,13 @@ public:
 	Command& getSub(string name) noexcept(false);
 	int run() noexcept(false);
 	int run(Tokens&) noexcept(false);
-	void show(int tabs=0) const;
-	void showDescription(int tabs=0) const;
-	void showFuncs(int tabs=0) const;
-	void showSubs(int tabs=0) const;
+	void help(int tabs=0) const;
+	void list(string root="") const;
+	void listFuncs(string root="") const;
+	void listSubs(string root="") const;
+	void helpDescription(int tabs=0) const;
+	void helpFuncs(int tabs=0) const;
+	void helpSubs(int tabs=0) const;
 	void setDescription(string d);
 	string getDescription() const;
 	static int exe(string name, Tokens& args);
@@ -42,7 +51,8 @@ public:
 	static int prompt();
 	static int prompt(string out);
 	static int terminal(string out="> ");
-	static void showAll();
+	static void helpAll();
+	static const map<string, Command *>& getCommands();
 };
 
 #endif

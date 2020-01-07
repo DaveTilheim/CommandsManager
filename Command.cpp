@@ -4,15 +4,18 @@ map<string, Command *> Command::commands = map<string, Command *>();
 const int Command::DYNAMIC = -1;
 const int Command::EXIT_TERMINAL = -3;
 const string Command::std_help_name = "help";
+const string Command::std_list_name = "list";
+const string Command::std_exit_name = "exit";
 const int Command::IGNORE_CMD = -2;
 
 //init help command
 Command Command::std_help_cmp = Command(Command::std_help_name,
 [](Command& self)
 {
+	self.setDescription("Display information about commands (name, description, prototypes, sub commands)");
 	self.func(F
 	{
-		Command::showAll();
+		Command::helpAll();
 		return 0;
 	}).func(F
 	{
@@ -24,14 +27,14 @@ Command Command::std_help_cmp = Command(Command::std_help_name,
 		try
 		{
 			vector<string> cs;
-			while(not args.end()) //show sub commands
+			while(not args.end()) //help sub commands
 			{
 				cs.push_back(c->name);
 				c = &c->getSub(args);
 			}
 			cout << endl;
 			for(auto it : cs) cout << it << " ";
-			c->show();
+			c->help();
 			cout << endl;
 		}
 		catch(const CommandException& e)
@@ -42,20 +45,62 @@ Command Command::std_help_cmp = Command(Command::std_help_name,
 	}, Command::DYNAMIC);
 });
 
-Command::Command(string name, function<void(Command&)> init, char root) : name(name)
+
+Command Command::std_list_cmp = Command(Command::std_list_name,
+[](Command& self)
 {
+	self.setDescription("Display a list of commands\nlist() display the name and the prototypes of the commands");
+	self.func(F
+	{
+		for(auto it : Command::commands)
+		{
+			it.second->list();
+		}
+		cout << endl;
+		return 0;
+	});
+	self.sub("name").func(F
+	{
+		cout << endl;
+		for(auto it : Command::commands)
+		{
+			cout << it.second->name << endl;
+			it.second->listSubs(it.second->name);
+		}
+		cout << endl;
+		return 0;
+	}).setDescription("Display the name of all the existing commands");
+});
+
+Command Command::std_exit_cmp = Command(Command::std_exit_name,
+[](Command& self)
+{
+	self.setDescription("Exit the terminal");
+	self.func(F
+	{
+		cout << endl << "Bye!" << endl << endl;
+		return Command::EXIT_TERMINAL;
+	});
+});
+
+
+
+Command::Command(string name, function<void(Command&)> init, char root)
+{
+	this->name = Tokens(name)[0];
 	if(root)
 	{
-		Command::commands[name] = this;
+		Command::commands[this->name] = this;
 	}
 	init(*this);
 }
 
-Command::Command(string name, char root) : name(name)
+Command::Command(string name, char root)
 {
+	this->name = Tokens(name)[0];
 	if(root)
 	{
-		Command::commands[name] = this;
+		Command::commands[this->name] = this;
 	}
 }
 
@@ -165,18 +210,88 @@ int Command::run(Tokens& args) noexcept(false)
 	throw NotAFunctionalCommandException(name);
 }
 
-void Command::show(int tabs) const
+void Command::list(string root) const
+{
+	if(root.size())
+		cout << "\n\033[4m" + root + " " + name + "\033[0m\n";
+	else
+		cout << "\n\033[4m" + name + "\033[0m\n";
+	listFuncs(root);
+	if(subCommands)
+	{
+		for(auto s : *subCommands)
+		{
+			if(root.size())
+				s.second->list(root +  " " + name);
+			else
+				s.second->list(name);
+		}
+	}
+}
+
+void Command::listFuncs(string root) const
+{
+	if(functions)
+	{
+		for(auto f : *functions)
+		{
+			if(f.first == -1)
+			{
+				if(root.size())
+					cout << root << " " << name << "(...)" << endl;
+				else
+					cout << name << "(...)" << endl;
+			}
+			else
+			{
+				if(root.size())
+					cout << root << " " << name << "(";
+				else
+					cout << name << "(";
+				int n = 0, i;
+				for(i = 0; i < f.first-1; i++) cout << "arg" << n++ << ", ";
+				if(i == f.first-1) cout << "arg" << n;
+				cout << ")" << endl;
+			}
+		}
+	}
+	else
+	{
+		cout << "can not be called" << endl;
+	}
+}
+
+void Command::listSubs(string root) const
+{
+	if(subCommands)
+	{
+		for(auto s : *subCommands)
+		{
+			if(s.second->subCommands)
+			{
+				if(s.second->functions)
+				{
+					cout << root << " " << s.first << endl;
+				}
+				s.second->listSubs(root + " " + s.first);
+			}
+			else cout << root << " " << s.first << endl;
+		}
+	}
+}
+
+void Command::help(int tabs) const
 {
 	for(int i = 0; i < tabs; i++) cout << "\t";
 	cout << "\033[4m" << name << "\033[0m > " << endl;
-	showDescription(tabs + 1);
+	helpDescription(tabs + 1);
 	cout << endl;
-	showFuncs(tabs + 1);
+	helpFuncs(tabs + 1);
 	cout << endl;
-	showSubs(tabs + 1);
+	helpSubs(tabs + 1);
 }
 
-void Command::showDescription(int tabs) const
+void Command::helpDescription(int tabs) const
 {
 	string tabs_s = "";
 	for(int i = 0; i < tabs; i++) tabs_s += "\t";
@@ -189,7 +304,7 @@ void Command::showDescription(int tabs) const
 	}
 }
 
-void Command::showSubs(int tabs) const
+void Command::helpSubs(int tabs) const
 {
 	int i;
 	for(i = 0; i < tabs; i++) cout << "\t";
@@ -198,7 +313,7 @@ void Command::showSubs(int tabs) const
 	{
 		for(auto it : *subCommands)
 		{
-			it.second->show(tabs);
+			it.second->help(tabs);
 		}
 	}
 	else
@@ -208,7 +323,7 @@ void Command::showSubs(int tabs) const
 	}
 }
 
-void Command::showFuncs(int tabs) const
+void Command::helpFuncs(int tabs) const
 {
 	for(int i = 0; i < tabs; i++) cout << "\t";
 	cout << "\033[7m Prototypes of \033[3m'" << name << "' \033[0m"<< endl;
@@ -314,14 +429,21 @@ int Command::terminal(string out)
 	return nbCommands;
 }
 
-void Command::showAll()
+void Command::helpAll()
 {
 	cout << endl;
 	cout << "\033[7m Commands \033[0m"<< endl << endl; 
 	for(auto it : Command::commands)
 	{
-		it.second->show();
+		it.second->help();
 		cout << endl << endl;
 	}
 	cout << endl;
 }
+
+const map<string, Command *>& Command::getCommands()
+{
+	return Command::commands;
+}
+
+

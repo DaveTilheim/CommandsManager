@@ -1,44 +1,36 @@
 #include "Command.hpp"
+#include <fstream>
+#include <vector>
 
+
+struct Object
+{
+	virtual ~Object() {};
+};
+
+template <class T> struct Data : public Object
+{
+	string id = "(null)";
+	T *addr = nullptr;
+	Data(string id, T *addr) : id(id), addr(addr) {}
+	~Data() { cout << id << " delete" << endl; delete addr; }
+};
+
+map<string, void *> datav;
 
 int main(int argc, char const *argv[])
 {
-	Command echo("echo");
-	Command c("quit");
-	c.func(F
-	{
-		return Command::EXIT_TERMINAL;
-	});
 
-	echo.func(F
-	{
-		while(not args.end())
-		{
-			cout << (string)args << " ";
-		}
-		cout << endl;
-		return 0;
-	}, Command::DYNAMIC).func(F
-	{
-		cout << "empty echo" << endl;
-		return 0;
-	}).sub("user").func(F
-	{
-		cout << "Arthur Detrembleur" << endl;
-		return 0;
-	}).setDescription("display the app creator's name");
+	//datav.push_back(new Data("var", new float(3.14)));
 
-	echo.getSub("user").sub("test").func(F
+	
+
+	Command::terminal("term$ ");
+
+	for(auto d : datav)
 	{
-		cout << args[0] << " " << args[1] << " " << args[2] << endl;
-		return 0;
-	}, 3);
-
-	echo.setDescription("display the command parameters\ntest new line");
-	Command brik("brik");
-	cout << Command::terminal("$[ ") << endl;
-
-
+		delete (Object *)d.second;
+	}
 
 	return 0;
 }
