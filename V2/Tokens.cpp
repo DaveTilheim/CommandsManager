@@ -15,6 +15,7 @@ Tokens::Tokens(const Tokens& cp)
 {
 	tokens = cp.tokens;
 	separator = cp.separator;
+	index = cp.index;
 }
 
 Tokens::~Tokens()
@@ -27,8 +28,45 @@ void Tokens::setSeparator(char s_separator)
 	separator = s_separator;
 }
 
+string Tokens::applyLock(string s_tokens)
+{
+	bool lock = false;
+	for(int i = 0; i < s_tokens.size(); i++)
+	{
+		if(s_tokens[i] == '\"')
+		{
+			s_tokens[i] = separator;
+			lock = not lock;
+			continue;
+		}
+		if(lock)
+		{
+			if(s_tokens[i] == separator)
+			{
+				s_tokens[i] = '\a';
+			}
+		}
+	}
+	return s_tokens;
+}
+
+void Tokens::freeLock()
+{
+	for(int i = index; i < tokens.size(); i++)
+	{
+		for(int j = 0; j < tokens[i].size(); j++)
+		{
+			if(tokens[i][j] == '_')
+			{
+				tokens[i][j] = '\a';
+			}
+		}
+	}
+}
+
 void Tokens::setTokens(string s_tokens)
 {
+	s_tokens = applyLock(s_tokens);
 	stringstream ss(s_tokens);
 	string token;
 	while (getline(ss, token, separator))
@@ -71,6 +109,11 @@ string Tokens::getToken(int index) const
 	return "";
 }
 
+string Tokens::getCurrent() const
+{
+	return tokens[index];
+}
+
 const vector<Token>& Tokens::getTokens() const
 {
 	return tokens;
@@ -105,11 +148,49 @@ void Tokens::pop()
 	tokens.erase(tokens.begin());
 }
 
+bool Tokens::surroundedBy(string sur) const
+{
+	if(tokens[index].size() <= sur.size() * 2) return false;
+	string sub1 = tokens[index].substr(0, sur.size());
+	string sub2 = tokens[index].substr(tokens[index].size() - sur.size());
+	if(sub1 == sur)
+	{
+		if(sur == "(")
+		{
+			return sub2 == ")";
+		}
+		if(sur == "{")
+		{
+			return sub2 == "}";
+		}
+		if(sur == "[")
+		{
+			return sub2 == "]";
+		}
+		if(sur == "<")
+		{
+			return sub2 == ">";
+		}
+		return sub2 == sur;
+	}
+
+	return false;
+}
+
+void Tokens::removeSurrounded(string sur)
+{
+	if(surroundedBy(sur))
+	{
+		tokens[index].erase(0, sur.size());
+		tokens[index].erase(tokens[index].size() - sur.size());
+	}
+}
+
 Tokens& Tokens::operator=(const Tokens& cp)
 {
 	separator = cp.separator;
 	tokens = cp.tokens;
-	index = 0;
+	index = cp.index;
 	return *this;
 }
 
@@ -156,7 +237,7 @@ ostream& operator<<(ostream& out, const Tokens& tokens)
 {
 	for(Token token : tokens.tokens)
 	{
-		out << token << endl;
+		out << token << " ";
 	}
 	return out;
 }

@@ -15,23 +15,28 @@ private:
 	vector<Token> tokens;
 	char separator;
 	mutable int index = 0;
+	string applyLock(string s_tokens);
 public:
 	Tokens(char separator=' ');
 	Tokens(string s_tokens, char separator=' ');
 	Tokens(const Tokens& cp);
 	~Tokens();
 	void setSeparator(char separator=' ');
+	void freeLock();
 	void setTokens(string s_tokens);
 	void setIndex(int i);
 	char getSeparator() const;
 	string getToken() const;
 	string getToken(int index) const;
+	string getCurrent() const;
 	const vector<Token>& getTokens() const;
 	int getIndex() const;
 	int count() const;
 	bool end() const;
 	void resetIndex();
 	void pop();
+	bool surroundedBy(string sur="(") const;
+	void removeSurrounded(string sur="(");
 	Tokens& operator=(const Tokens& cp);
 	Tokens& operator=(string s_tokens);
 	Tokens& operator<<(string s_tokens);

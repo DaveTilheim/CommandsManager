@@ -1,63 +1,31 @@
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 #include <map>
-#include <functional>
-#include "Tokens.hpp"
+#include "Prototype.hpp"
 
-typedef Tokens Args;
-
-class Command;
-
-enum ARGS_TYPE
-{
-	STATIC_ARGS,
-	DYNAMIC_ARGS
-}
-
-class Prototype
-{
-private:
-	const ARGS_TYPE argsType;
-	const int nargs;
-	const Command *super;
-	string description;
-	function<void *(Args)> func;
-};
-
-
-exe2 print "Hello" addall 45 1 666
-
-exe2 => prototypes[-2]
-	print => prototypes[1]
-		func("Hello")
-	addall => prototypes[...]
-		func(45, 1, 666)
-
-
-print "Hello-world"
-
-print
-	prototypes[1]
-		func("Hello-world") => STATIC_ARGS
-
-print sin 90
-
-print
-	prototypes[-1]
-		func(sin 90) => DYNAMIC_ARGS
-			sin
-				prototypes[1]
-					func(90) => STATIC_ARGS
-
-
-class Command
+class Command final
 {
 private:
 	string name;
-	Command *super;
+	const Command *super;
 	map<int, Prototype *> prototypes;
-	vector<Command *> subs;
+	vector<Command *> subcommands;
 public:
+	Command() = delete;
+	Command(const Command&) = delete;
+	Command(string name, const Command *super=nullptr);
+	~Command();
+	Command& prototype(Prototype *proto, int nargs=0);
+	Command& prototype(function<void *(Args)>, int nargs=0, string description="<no description>");
+	string getName() const;
+	string getFullName() const;
+	bool isSubCommand(Tokens tokens);
+	Command& addSub(string name);
+	Command& sub(string name);
+	void *call(Args args);
+	void *operator()(Args args);
+	Command& operator=(const Command&) = delete;
+	friend ostream& operator<<(ostream& out, const Command& cmd);
 };
 
 #endif
