@@ -56,9 +56,9 @@ void Tokens::freeLock()
 	{
 		for(int j = 0; j < tokens[i].size(); j++)
 		{
-			if(tokens[i][j] == '_')
+			if(tokens[i][j] == '\a')
 			{
-				tokens[i][j] = '\a';
+				tokens[i][j] = ' ';
 			}
 		}
 	}

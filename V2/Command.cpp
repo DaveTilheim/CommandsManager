@@ -46,6 +46,21 @@ Command& Command::prototype(function<void *(Args)> func, int nargs, string descr
 	return prototype(new Prototype(func, description), nargs);
 }
 
+Command& Command::prototype(function<void *(Args)> func, string form, string description)
+{
+	Tokens tmp(form);
+	int args;
+	if(tmp[tmp.count() - 1] == "...")
+	{
+		args = -1;
+	}
+	else
+	{
+		args = tmp.count() - 1; // - command name
+	}
+	return prototype(new Prototype(func, description), args);
+}
+
 bool Command::isSubCommand(Tokens tokens)
 {
 	for(auto sub : subcommands)
@@ -81,8 +96,7 @@ Command& Command::sub(string name)
 			return *sub;
 		}
 	}
-	Command& sub = addSub(name);
-	return sub;
+	return addSub(name);
 }
 
 void *Command::call(Args args)
@@ -102,6 +116,15 @@ void *Command::call(Args args)
 			args.freeLock();
 		}
 		return prototypes[nargs]->call(args);
+	}
+	else
+	{
+		if(nargs and prototypes.find(-1) != prototypes.end())
+		{
+			args.removeSurrounded("[");
+			args.freeLock();
+			return prototypes[-1]->call(args);
+		}
 	}
 	return nullptr;
 }

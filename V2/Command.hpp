@@ -17,6 +17,7 @@ public:
 	~Command();
 	Command& prototype(Prototype *proto, int nargs=0);
 	Command& prototype(function<void *(Args)>, int nargs=0, string description="<no description>");
+	Command& prototype(function<void *(Args)>, string form, string description="<no description>");
 	string getName() const;
 	string getFullName() const;
 	bool isSubCommand(Tokens tokens);
