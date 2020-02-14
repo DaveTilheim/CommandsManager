@@ -1,6 +1,9 @@
 #include "Command.hpp"
 
 
+map<string, Command *> Command::armedCommands = map<string, Command *>();
+
+
 Command::Command(string name, const Command *super) : super(super), name(name)
 {
 
@@ -27,11 +30,11 @@ string Command::getName() const
 string Command::getFullName() const
 {
 	if(super)
-		return super->getFullName() + " " + name;
+		return super->getFullName() + "." + name;
 	return getName();
 }
 
-Command& Command::prototype(Prototype *proto, int nargs)
+Command& Command::proto(Prototype *proto, int nargs)
 {
 	if(prototypes.find(nargs) != prototypes.end())
 	{
@@ -41,12 +44,12 @@ Command& Command::prototype(Prototype *proto, int nargs)
 	return *this;
 }
 
-Command& Command::prototype(function<void *(Args)> func, int nargs, string description)
+Command& Command::proto(function<string(Args)> func, int nargs, string description)
 {
-	return prototype(new Prototype(func, description), nargs);
+	return proto(new Prototype(func, description), nargs);
 }
 
-Command& Command::prototype(function<void *(Args)> func, string form, string description)
+Command& Command::proto(function<string(Args)> func, string form, string description)
 {
 	Tokens tmp(form);
 	int args;
@@ -58,14 +61,26 @@ Command& Command::prototype(function<void *(Args)> func, string form, string des
 	{
 		args = tmp.count() - 1; // - command name
 	}
-	return prototype(new Prototype(func, description), args);
+	return proto(new Prototype(func, description), args);
 }
 
-bool Command::isSubCommand(Tokens tokens)
+bool Command::isSubCommand(Tokens tokens) const
 {
 	for(auto sub : subcommands)
 	{
 		if(sub->getName() == tokens[tokens.getIndex()])
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Command::isCommand(Tokens tokens) const
+{
+	for(auto com : Command::armedCommands)
+	{
+		if(com.second->getName() == tokens[tokens.getIndex()])
 		{
 			return true;
 		}
@@ -99,37 +114,112 @@ Command& Command::sub(string name)
 	return addSub(name);
 }
 
-void *Command::call(Args args)
+Tokens Command::copyNeededTokens(const Tokens& tokens) const
 {
-	if(isSubCommand(args))
+	if(tokens.end())
 	{
-		//cout << getFullName() + ": subcommand: " + args.getCurrent() << endl;
-		return sub(args.getToken()).call(args);
+		return Tokens("");
 	}
-	int nargs = args.count() - args.getIndex();
-	if(prototypes.find(nargs) != prototypes.end())
+	string buff = tokens.getCurrent();
+	if(buff.size())
 	{
-		//cout << getFullName() + ": constant call" << endl;
-		if(nargs)
+		if(buff[buff.size() - 1] == '|')
 		{
-			args.removeSurrounded("[");
-			args.freeLock();
-		}
-		return prototypes[nargs]->call(args);
-	}
-	else
-	{
-		if(nargs and prototypes.find(-1) != prototypes.end())
-		{
-			args.removeSurrounded("[");
-			args.freeLock();
-			return prototypes[-1]->call(args);
+			return Tokens(buff.substr(0, buff.size() - 1));
 		}
 	}
-	return nullptr;
+	int i = tokens.getIndex() + 1;
+	while(i < tokens.count())
+	{
+		if(tokens[i].size() > 1 and tokens[i][tokens[i].size() - 1] == '|')
+		{
+			buff += tokens.getSeparator() + tokens[i].substr(0, tokens[i].size() - 1);
+			break;
+		}
+		else
+		{
+			buff += tokens.getSeparator() + tokens[i];
+		}
+		i++;
+	}
+	return Tokens(buff);
 }
 
-void *Command::operator()(Args args)
+string Command::call(Args args)
+{
+	cout << "CALL " + getFullName() + "(" << args.partial() << ")" << endl;;
+	try
+	{
+		if(isSubCommand(args))
+		{
+			return sub(args.getToken()).call(args);
+		}
+		
+		string buff;
+		//trouver un nouvel algorithme qui prélève les tokens en fonction du nombre de params (recursif)
+		while(not args.end())
+		{
+			if(isCommand(args))
+			{
+				string command = args;
+				Tokens needtok = Command::armedCommands[command]->copyNeededTokens(args);
+				args.setIndex(args.getIndex() + needtok.count());
+				string ret = Command::armedCommands[command]->call(needtok) + " ";
+				cout << "RET: " << ret + " => " + getFullName() << endl;
+				buff += ret;
+			}
+			else
+			{
+				buff += (string)args + " ";
+			}
+		}
+		for(int i = args.getIndex(); i < args.count(); i++)
+			buff += args[i] + " ";
+		if(buff.size())
+		{
+			buff.erase(buff.size() - 1);
+		}
+		cout << "ARGS: " << buff << endl;
+		args = Tokens(buff);
+		
+		
+		int nargs = args.count() - args.getIndex();
+		if(prototypes.find(nargs) != prototypes.end()) //args number match
+		{
+			if(nargs != NONE)
+			{
+				args.removeSurrounded("[");
+				args.freeLock();
+			}
+			return prototypes[nargs]->call(args);
+		}
+		else
+		{
+			if(nargs and prototypes.find(UNDEFINED) != prototypes.end()) //undefined args number
+			{
+				args.removeSurrounded("[");
+				args.freeLock();
+				return prototypes[UNDEFINED]->call(args);
+			}
+			else
+			{
+				throw CommandException("Bad prototype call: " + to_string(nargs));
+			}
+		}
+	}
+	catch(const CommandException& err)
+	{
+		throw CommandException(getFullName() + " => " + err.what());
+	}
+}
+
+Command& Command::arm()
+{
+	Command::armedCommands[name] = this;
+	return *this;
+}
+
+string Command::operator()(Args args)
 {
 	return call(args);
 }
@@ -147,3 +237,29 @@ ostream& operator<<(ostream& out, const Command& cmd)
 	}
 	return out;
 }
+
+//static
+string Command::exe(string scommand)
+{
+	Tokens tcommand(scommand);
+	if(tcommand.count())
+	{
+		if(Command::armedCommands.find(tcommand.getCurrent()) != Command::armedCommands.end()) //command exists
+		{
+			try
+			{
+				return Command::armedCommands[tcommand]->call(tcommand);
+			}
+			catch(const CommandException& err)
+			{
+				cout << err.what() << endl;
+			}
+		}
+	}
+	
+	return "(null)";
+}
+
+
+
+

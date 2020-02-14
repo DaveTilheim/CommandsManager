@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstdlib>
+#include "CommandException.hpp"
 
 using namespace std;
 
@@ -37,6 +39,7 @@ public:
 	void pop();
 	bool surroundedBy(string sur="(") const;
 	void removeSurrounded(string sur="(");
+	Tokens partial() const;
 	Tokens& operator=(const Tokens& cp);
 	Tokens& operator=(string s_tokens);
 	Tokens& operator<<(string s_tokens);
@@ -47,6 +50,7 @@ public:
 	string operator[](int i) const;
 	friend ostream& operator<<(ostream& out, const Tokens& tokens);
 };
+
 
 
 #endif

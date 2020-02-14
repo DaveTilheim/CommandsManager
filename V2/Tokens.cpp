@@ -43,7 +43,7 @@ string Tokens::applyLock(string s_tokens)
 		{
 			if(s_tokens[i] == separator)
 			{
-				s_tokens[i] = '\a';
+				s_tokens[i] = '\e';
 			}
 		}
 	}
@@ -52,13 +52,14 @@ string Tokens::applyLock(string s_tokens)
 
 void Tokens::freeLock()
 {
+	int o=0;
 	for(int i = index; i < tokens.size(); i++)
 	{
 		for(int j = 0; j < tokens[i].size(); j++)
 		{
-			if(tokens[i][j] == '\a')
+			if(tokens[i][j] == '\e')
 			{
-				tokens[i][j] = ' ';
+				tokens[i][j] = separator;
 			}
 		}
 	}
@@ -80,10 +81,7 @@ void Tokens::setTokens(string s_tokens)
 
 void Tokens::setIndex(int i)
 {
-	if(i < tokens.size())
-	{
-		index = i;
-	}
+	index = i;
 }
 
 char Tokens::getSeparator() const
@@ -186,6 +184,17 @@ void Tokens::removeSurrounded(string sur)
 	}
 }
 
+Tokens Tokens::partial() const
+{
+	Tokens tok;
+	tok.setSeparator(getSeparator());
+	for(int i = getIndex(); i < count(); i++)
+	{
+		tok.tokens.push_back(tokens[i]);
+	}
+	return tok;
+}
+
 Tokens& Tokens::operator=(const Tokens& cp)
 {
 	separator = cp.separator;
@@ -220,12 +229,41 @@ Tokens::operator string() const
 
 Tokens::operator int() const
 {
-	return atoi(getToken().c_str());
+	string tok = getToken();
+	int ret = atoi(tok.c_str());
+	if(not ret)
+	{
+		for(int i = 0; i < tok.size(); i++)
+		{
+			if(tok[i] != '0')
+			{
+				if(tok[i] == '-' and i == 0) continue;
+				throw CommandException("Integer value expected(" + tok + ")"); //create Exception class
+			}
+		}
+	}
+	return ret;
 }
 
 Tokens::operator float() const
 {
-	return atof(getToken().c_str());
+	string tok = getToken();
+	double ret = atof(tok.c_str());
+	if(not ret)
+	{
+		for(int i = 0; i < tok.size(); i++)
+		{
+			if(tok[i] != '0')
+			{
+				if(tok[i] != '.')
+				{
+					if(tok[i] == '-' and i == 0) continue;
+					throw CommandException("Double value expected(" + tok + ")");
+				}
+			}
+		}
+	}
+	return ret;
 }
 
 string Tokens::operator[](int i) const
@@ -235,9 +273,12 @@ string Tokens::operator[](int i) const
 
 ostream& operator<<(ostream& out, const Tokens& tokens)
 {
+	string buff;
 	for(Token token : tokens.tokens)
 	{
-		out << token << " ";
+		buff += token + ", ";
 	}
-	return out;
+	if(buff.size())
+		buff.erase(buff.size() - 2);
+	return out << buff;
 }

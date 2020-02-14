@@ -11,17 +11,17 @@ class Prototype final
 {
 private:
 	string description;
-	function<void *(Args)> func;
+	function<string (Args)> func;
 public:
 	Prototype() = delete;
 	Prototype(const Prototype&) = delete;
-	Prototype(function<void *(Args)> func, string description="<no description>");
+	Prototype(function<string (Args)> func, string description="<no description>");
 	~Prototype();
 	string getDescription() const;
-	function<void *(Args)> getFunction() const;
-	void setFunction(function<void *(Args)> func);
-	void *call(Args args) const;
-	void *operator()(Args args) const;
+	function<string (Args)> getFunction() const;
+	void setFunction(function<string (Args)> func);
+	string call(Args args) const;
+	string operator()(Args args) const;
 	Prototype& operator=(const Prototype&) = delete;
 	friend ostream& operator<<(ostream& out, const Prototype& pr);
 };

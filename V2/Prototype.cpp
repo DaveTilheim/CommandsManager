@@ -1,7 +1,7 @@
 #include "Prototype.hpp"
 
 
-Prototype::Prototype(function<void *(Args)> func, string description) : func(func), description(description)
+Prototype::Prototype(function<string (Args)> func, string description) : func(func), description(description)
 {
 
 }
@@ -16,22 +16,22 @@ string Prototype::getDescription() const
 	return description;
 }
 
-function<void *(Args)> Prototype::getFunction() const
+function<string (Args)> Prototype::getFunction() const
 {
 	return func;
 }
 
-void Prototype::setFunction(function<void *(Args)> func)
+void Prototype::setFunction(function<string (Args)> func)
 {
 	this->func = func;
 }
 
-void *Prototype::call(Args args) const
+string Prototype::call(Args args) const
 {
 	return func(args);
 }
 
-void *Prototype::operator()(Args args) const
+string Prototype::operator()(Args args) const
 {
 	return call(args);
 }
