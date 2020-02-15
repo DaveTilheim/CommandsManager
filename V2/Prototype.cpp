@@ -6,6 +6,11 @@ Prototype::Prototype(function<string (Args)> func, string description) : func(fu
 
 }
 
+Prototype::Prototype(const Prototype& cp) : func(cp.func), description(cp.description)
+{
+
+}
+
 Prototype::~Prototype()
 {
 

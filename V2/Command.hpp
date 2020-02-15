@@ -1,6 +1,8 @@
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 #include <map>
+#include <ctype.h>
+#include <cstdlib>
 #include "Prototype.hpp"
 
 #ifdef DEBUG_MODE
@@ -23,9 +25,11 @@ private:
 	map<int, Prototype *> prototypes;
 	vector<Command *> subcommands;
 	static map<string, Command *> armedCommands;
+	static string Tabs(int n);
 public:
 	Command() = delete;
 	Command(const Command&) = delete;
+	Command(string name, Command&, int n, const Command *super=nullptr);
 	Command(string name, const Command *super=nullptr);
 	~Command();
 	Command& proto(Prototype *proto, int nargs=0);
@@ -33,12 +37,14 @@ public:
 	Command& proto(function<string (Args)>, string form, string description="<no description>");
 	string getName() const;
 	string getFullName() const;
-	Tokens copyNeededTokens(const Tokens&) const;
+	const Prototype& getProto(int i);
+	static string getCallStatus(string& cs);
+	int getMaxNargs() const;
 	bool isSubCommand(Tokens tokens) const;
-	bool isCommand(Tokens tokens) const;
+	static bool isCommand(Tokens tokens);
 	Command& addSub(string name);
 	Command& sub(string name);
-	string call(Args args);
+	string call(Args& args, string status="");
 	Command& arm();
 	string operator()(Args args);
 	Command& operator=(const Command&) = delete;

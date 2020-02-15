@@ -14,7 +14,7 @@ private:
 	function<string (Args)> func;
 public:
 	Prototype() = delete;
-	Prototype(const Prototype&) = delete;
+	Prototype(const Prototype& cp);
 	Prototype(function<string (Args)> func, string description="<no description>");
 	~Prototype();
 	string getDescription() const;
@@ -22,7 +22,6 @@ public:
 	void setFunction(function<string (Args)> func);
 	string call(Args args) const;
 	string operator()(Args args) const;
-	Prototype& operator=(const Prototype&) = delete;
 	friend ostream& operator<<(ostream& out, const Prototype& pr);
 };
 

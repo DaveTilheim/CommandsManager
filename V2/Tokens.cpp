@@ -112,7 +112,7 @@ string Tokens::getCurrent() const
 	return tokens[index];
 }
 
-const vector<Token>& Tokens::getTokens() const
+vector<Token>& Tokens::getTokens()
 {
 	return tokens;
 }
@@ -195,6 +195,17 @@ Tokens Tokens::partial() const
 	return tok;
 }
 
+Tokens Tokens::partial(int nb) const
+{
+	Tokens tok;
+	tok.setSeparator(getSeparator());
+	for(int i = getIndex(); i < getIndex() + nb; i++)
+	{
+		tok.tokens.push_back(tokens[i]);
+	}
+	return tok;
+}
+
 Tokens& Tokens::operator=(const Tokens& cp)
 {
 	separator = cp.separator;
@@ -214,6 +225,15 @@ Tokens& Tokens::operator=(string s_tokens)
 Tokens& Tokens::operator<<(string s_tokens)
 {
 	setTokens(s_tokens);
+	return *this;
+}
+
+Tokens& Tokens::operator<<(const Tokens& toks)
+{
+	for(int i = toks.getIndex(); i < toks.count(); i++)
+	{
+		tokens.push_back(toks.getToken(i));
+	}
 	return *this;
 }
 
@@ -269,6 +289,12 @@ Tokens::operator float() const
 string Tokens::operator[](int i) const
 {
 	return getToken(i);
+}
+
+Tokens& Tokens::operator++()
+{
+	setIndex(getIndex() + 1);
+	return *this;
 }
 
 ostream& operator<<(ostream& out, const Tokens& tokens)

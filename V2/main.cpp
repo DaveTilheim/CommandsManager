@@ -6,63 +6,63 @@
 
 int main(int argc, char const *argv[])
 {
-	Command c("print");
-	c.proto([](Args args)
+	
+
+	Command calc("calc");
+	calc.proto([](Args args)
 	{
-		return "Hello world!";
-	}, NONE)
+		return "no result";
+	}, 0);
+
+	calc.sub("add")
 	.proto([](Args args)
 	{
-		cout << "out: " << args << endl;
-		return to_string(args.count());
-	}, UNDEFINED)
-	.sub("nargs")
+		return to_string((double)args + (double)args);
+	}, 2)
 	.proto([](Args args)
 	{
-		cout << "out: " << args << " => " << args.count() << endl;
-		return to_string(args.count());
+		double buf = 0.f;
+		while(not args.end())
+		{
+			buf += (double)args;
+		}
+		return to_string(buf);
 	}, UNDEFINED);
 
-	c.sub("user")
+	calc.sub("sub")
 	.proto([](Args args)
 	{
-		cout << "Hello Arthur Detrembleur!" << endl;
-		return ":)";
-	}, NONE);
-
-	Command cc("lock");
-	cc.proto([](Args args)
-	{
-		return "{" + args[0] + "}";
-	}, 1)
-	.proto([](Args args)
-	{
-		return args[1] + args[0] + args[1];
+		return to_string((double)args - (double)args);
 	}, 2);
 
-	c.arm();
-	cc.arm();
-
-	Command sinus("sin");
-	sinus.proto([](Args args)
+	calc.sub("mul")
+	.proto([](Args args)
 	{
-		return to_string(sin((double)args));
-	}, 1);
+		return to_string((double)args * (double)args);
+	}, 2);
 
-	sinus.arm();
+	calc.sub("div")
+	.proto([](Args args)
+	{
+		return to_string((double)args / (double)args);
+	}, 2);
 
-	//string ret;
-	Command::exe("print lock sin 100 lock hello sin 100"); //lock_2 (call explicit du proto[2])
-	/*print
-		lock
-			sin
-				100
-			lock
-				hello
-				sin
-					100
-	out: 0.5hello0.50.50.5hello0.5
-	*/
+
+
+	calc.arm();
+
+	Command c("mul");
+	c.proto([](Args args)
+	{
+		return args[0] + "*" + args[1];
+	}, 2);
+	c.arm();
+
+	
+	cout << Command::exe("mul mul 5 6 calc mul:r 2 9") << endl;
+
+
+	//Command::exe("print size 5 P");
 
 
 	return 0;

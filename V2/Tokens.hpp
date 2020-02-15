@@ -31,7 +31,7 @@ public:
 	string getToken() const;
 	string getToken(int index) const;
 	string getCurrent() const;
-	const vector<Token>& getTokens() const;
+	vector<Token>& getTokens();
 	int getIndex() const;
 	int count() const;
 	bool end() const;
@@ -40,13 +40,16 @@ public:
 	bool surroundedBy(string sur="(") const;
 	void removeSurrounded(string sur="(");
 	Tokens partial() const;
+	Tokens partial(int nb) const;
 	Tokens& operator=(const Tokens& cp);
 	Tokens& operator=(string s_tokens);
 	Tokens& operator<<(string s_tokens);
+	Tokens& operator<<(const Tokens& toks);
 	bool operator!();
 	operator string() const;
 	operator int() const;
 	operator float() const;
+	Tokens& operator++();
 	string operator[](int i) const;
 	friend ostream& operator<<(ostream& out, const Tokens& tokens);
 };
