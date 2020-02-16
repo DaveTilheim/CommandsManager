@@ -37,7 +37,7 @@ public:
 	bool end() const;
 	void resetIndex();
 	void pop();
-	bool surroundedBy(string sur="(") const;
+	bool surroundedBy(int i, string sur="(") const;
 	void removeSurrounded(string sur="(");
 	Tokens partial() const;
 	Tokens partial(int nb) const;

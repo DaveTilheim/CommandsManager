@@ -125,6 +125,11 @@ Command& Command::sub(string name)
 	return addSub(name);
 }
 
+vector<Command *>& Command::subs()
+{
+	return subcommands;
+}
+
 int Command::getMaxNargs() const
 {
 	if(prototypes.find(UNDEFINED) != prototypes.end())
@@ -147,50 +152,56 @@ string Command::Tabs(int n)
 	return out;
 }
 
-string Command::call(Args& args, string status)
+string Command::call(Args& args, string status) noexcept(false)
 {
 	static int tabs = 0;
 	tabs++;
-	cout << Tabs(tabs-1) << "CALL " + getFullName() + "(" << args.partial() << ")" << endl;
-	cout << Tabs(tabs-1) << "STATUS: " << status << endl;
+	//cout << Tabs(tabs-1) << "CALL " + getFullName() + "(" << args.partial() << ")" << endl;
+	//cout << Tabs(tabs-1) << "STATUS: " << status << endl;
 	if(status.find('r') != -1)
 	{
 		status = status.substr(1);
 	}
 	try
 	{
-		string nextStatus = getCallStatus(args.getTokens()[args.getIndex()]);
-		if(nextStatus.find('r') == -1 and isSubCommand(args))
+		string nextStatus = "";
+		if(not args.end())
 		{
-			cout << Tabs(tabs-1) << "SUB: " << args.getCurrent() << endl;
-			if(not nextStatus.size()) //nargs lock
+			nextStatus = getCallStatus(args.getTokens()[args.getIndex()]);
+			if(nextStatus.find('r') == -1 and isSubCommand(args))
 			{
-				nextStatus = "";
-			}
-			Tokens tmp = args;
-			try
-			{
-				return sub(args.getToken()).call(args, nextStatus);
-			}
-			catch(const CommandException& e)
-			{
-				tabs--;
-				args = tmp;
-				if(isCommand(args))
+				//cout << Tabs(tabs-1) << "SUB: " << args.getCurrent() << endl;
+				if(not nextStatus.size()) //nargs lock
 				{
-					if(nextStatus.size())
-						args.getTokens()[args.getIndex()] += ":" + nextStatus;
-					cout << Tabs(tabs-1) << "SUB FAIL => try command" << endl;
+					nextStatus = "";
 				}
-				else
+				Tokens tmp = args;
+				try
 				{
-					throw e;
+					return sub(args.getToken()).call(args, nextStatus);
+				}
+				catch(const CommandException& e)
+				{
+					tabs--;
+					args = tmp;
+					if(isCommand(args))
+					{
+						if(nextStatus.size())
+							args.getTokens()[args.getIndex()] += ":" + nextStatus;
+						//cout << Tabs(tabs-1) << "SUB FAIL => try command" << endl;
+					}
+					else
+					{
+						tabs = 0;
+						throw e;
+					}
 				}
 			}
-		}
-		else
-		{
-			args.getTokens()[args.getIndex()] += ":" + nextStatus.substr(nextStatus.find('r') + 1);
+			else
+			{
+				if(nextStatus.size())
+					args.getTokens()[args.getIndex()] += ":" + nextStatus.substr(nextStatus.find('r') + 1);
+			}
 		}
 		
 		int maxNargs;
@@ -201,6 +212,7 @@ string Command::call(Args& args, string status)
 			{
 				if(prototypes.find(-1) == prototypes.end())
 				{
+					tabs = 0;
 					throw CommandException("Bad prototype call: " + to_string(maxNargs));
 				}
 			}
@@ -211,35 +223,40 @@ string Command::call(Args& args, string status)
 		}
 		string buff;
 		Tokens finalTokens;
-		cout << Tabs(tabs-1) << "MAX NARGS: " << maxNargs << endl;
-		for(int i = 0; (i < maxNargs) or (maxNargs == UNDEFINED and not args.end()); i++)
+		//cout << Tabs(tabs-1) << "MAX NARGS: " << maxNargs << endl;
+		if(not args.end())
 		{
-			string nextStatus = getCallStatus(args.getTokens()[args.getIndex()]);
-			if(isCommand(args))
+			for(int i = 0; (i < maxNargs or maxNargs == UNDEFINED) and not args.end(); i++)
 			{
-				cout << Tabs(tabs-1) << "CMD: " << args.getCurrent() << endl;
-				string ret = Command::armedCommands[args]->call(args, nextStatus);
-				finalTokens.getTokens().push_back(ret);
-				cout << Tabs(tabs-1) << "RET: " << ret << endl;
-			}
-			else
-			{
-				if(not args.end())
+				string nextStatus = getCallStatus(args.getTokens()[args.getIndex()]);
+				if(isCommand(args))
 				{
-					if(nextStatus.size())
-						args.getTokens()[args.getIndex()] += ":" + nextStatus;
-					cout << Tabs(tabs-1) << "CONST: " << args.getCurrent() << endl;
-					finalTokens.getTokens().push_back(args);
+					//cout << Tabs(tabs-1) << "CMD: " << args.getCurrent() << endl;
+					string ret = Command::armedCommands[args]->call(args, nextStatus);
+					finalTokens.getTokens().push_back(ret);
+					//cout << Tabs(tabs-1) << "RET: " << ret << endl;
 				}
 				else
-					break;
+				{
+					if(not args.end())
+					{
+						if(nextStatus.size())
+						{
+							args.getTokens()[args.getIndex()] += ":" + nextStatus;
+						}
+						//cout << Tabs(tabs-1) << "CONST: " << args.getCurrent() << endl;
+						finalTokens.getTokens().push_back(args);
+					}
+					else
+						break;
+				}
 			}
 		}
-
 		int nargs = finalTokens.count();
-		cout << Tabs(tabs-1) << "NARGS_1: " << nargs << endl;
+		//cout << Tabs(tabs-1) << "NARGS_1: " << nargs << endl;
 		if(status.size() and nargs != maxNargs and maxNargs != UNDEFINED)
 		{
+			tabs = 0;
 			throw CommandException("Bad number of arguments: " + to_string(nargs) + " expected " + to_string(maxNargs));
 		}
 		if(nargs > maxNargs)
@@ -252,17 +269,17 @@ string Command::call(Args& args, string status)
 		{
 			finalTokens << args;
 		}
-		cout << Tabs(tabs-1) << "NARGS_2: " << nargs << endl;
+		//cout << Tabs(tabs-1) << "NARGS_2: " << nargs << endl;
 		if(prototypes.find(nargs) != prototypes.end()) //args number match
 		{
-			cout << Tabs(tabs-1) << "PROTO: " << nargs << endl;
+			//cout << Tabs(tabs-1) << "PROTO: " << nargs << endl;
 			if(nargs != NONE)
 			{
-				finalTokens.removeSurrounded("[");
+				finalTokens.removeSurrounded("'");
 				finalTokens.freeLock();
 			}
 			finalTokens.getTokens().erase(finalTokens.getTokens().begin() + nargs, finalTokens.getTokens().begin() + finalTokens.count());
-			cout << Tabs(tabs-1) << "EXE: " << getFullName() << "(" <<  finalTokens << ")" << endl;
+			//cout << Tabs(tabs-1) << "EXE: " << getFullName() << "(" <<  finalTokens << ")" << endl;
 			if(super)tabs--;
 			tabs--;
 			return prototypes[nargs]->call(finalTokens);
@@ -277,16 +294,17 @@ string Command::call(Args& args, string status)
 					if(n != -1)
 						finalTokens = finalTokens.partial(n);
 				}
-				cout << Tabs(tabs-1) << "PROTO: UNDEFINED" << endl;
-				finalTokens.removeSurrounded("[");
+				//cout << Tabs(tabs-1) << "PROTO: UNDEFINED" << endl;
+				finalTokens.removeSurrounded("'");
 				finalTokens.freeLock();
-				cout << Tabs(tabs-1) << "EXE: " << getFullName() << "(" <<  finalTokens << ")" << endl;
+				//cout << Tabs(tabs-1) << "EXE: " << getFullName() << "(" <<  finalTokens << ")" << endl;
 				if(super)tabs--;
 				tabs--;
 				return prototypes[UNDEFINED]->call(finalTokens);
 			}
 			else
 			{
+				tabs = 0;
 				throw CommandException("Bad prototype call: " + to_string(nargs));
 			}
 		}
@@ -310,55 +328,49 @@ string Command::operator()(Args args)
 
 ostream& operator<<(ostream& out, const Command& cmd)
 {
-	out << cmd.name << endl;
+	out << cmd.getFullName() << endl;
 	for(auto pr : cmd.prototypes)
 	{
 		out << "\tArguments: " << pr.first << " -> " << *pr.second << endl;
 	}
 	for(auto sub : cmd.subcommands)
 	{
-		out << "sub =>" << endl << *sub << endl;
+		out << endl << *sub << endl;
 	}
 	return out;
 }
 
 string Command::getCallStatus(string& cs)
 {
-	if(cs.find(':') != -1)
+	if(cs.find(':') != -1 and cs.find('\e') == -1)
 	{
 		string status = cs.substr(cs.find(':') + 1);
 		cs.erase(cs.size() - status.size() - 1);
 		return status;
 	}
+
 	return "";
 }
 
 //static
-string Command::exe(string scommand)
+string Command::exe(string scommand) noexcept(false)
 {
 	Tokens tcommand(scommand);
 	if(tcommand.count())
 	{
 		string buf;
-		try
+		while(not tcommand.end())
 		{
-			while(not tcommand.end())
+			string& com = tcommand.getTokens()[tcommand.getIndex()];
+			string status = getCallStatus(com);
+			if(Command::armedCommands.find(com) != Command::armedCommands.end()) //command exists
 			{
-				string& com = tcommand.getTokens()[tcommand.getIndex()];
-				string status = getCallStatus(com);
-				if(Command::armedCommands.find(com) != Command::armedCommands.end()) //command exists
-				{
-					buf += Command::armedCommands[tcommand]->call(tcommand, status) + " ";
-				}
-				else
-				{
-					throw CommandException("Not a command: " + com);
-				}
+				buf += Command::armedCommands[tcommand]->call(tcommand, status) + " ";
 			}
-		}
-		catch(const CommandException& err)
-		{
-			cout << err.what() << endl;
+			else
+			{
+				throw CommandException("Not a command: " + com);
+			}
 		}
 		if(buf.size())
 		{
@@ -367,9 +379,27 @@ string Command::exe(string scommand)
 		return buf;
 	}
 	
-	return "(null)";
+	return "";
+}
+
+string Command::exeInput() noexcept(false)
+{
+	string buf;
+	getline(cin, buf);
+	return Command::exe(buf);
+}
+
+map<string, Command *>& Command::getAll()
+{
+	return armedCommands;
 }
 
 
-
-
+void Command::printNames() const
+{
+	cout << getFullName() << endl;
+	for(auto s : subcommands)
+	{
+		s->printNames();
+	}
+}

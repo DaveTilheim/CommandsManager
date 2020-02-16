@@ -43,5 +43,5 @@ string Prototype::operator()(Args args) const
 
 ostream& operator<<(ostream& out, const Prototype& pr)
 {
-	return out << "Description: " << pr.description;
+	return out << pr.description;
 }

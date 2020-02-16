@@ -146,11 +146,11 @@ void Tokens::pop()
 	tokens.erase(tokens.begin());
 }
 
-bool Tokens::surroundedBy(string sur) const
+bool Tokens::surroundedBy(int i, string sur) const
 {
-	if(tokens[index].size() <= sur.size() * 2) return false;
-	string sub1 = tokens[index].substr(0, sur.size());
-	string sub2 = tokens[index].substr(tokens[index].size() - sur.size());
+	if(tokens[i].size() <= sur.size() * 2) return false;
+	string sub1 = tokens[i].substr(0, sur.size());
+	string sub2 = tokens[i].substr(tokens[i].size() - sur.size());
 	if(sub1 == sur)
 	{
 		if(sur == "(")
@@ -177,10 +177,13 @@ bool Tokens::surroundedBy(string sur) const
 
 void Tokens::removeSurrounded(string sur)
 {
-	if(surroundedBy(sur))
+	for(int i = getIndex(); i < count(); i++)
 	{
-		tokens[index].erase(0, sur.size());
-		tokens[index].erase(tokens[index].size() - sur.size());
+		if(surroundedBy(i, sur))
+		{
+			tokens[i].erase(0, sur.size());
+			tokens[i].erase(tokens[i].size() - sur.size());
+		}
 	}
 }
 

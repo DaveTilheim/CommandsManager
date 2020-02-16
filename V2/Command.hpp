@@ -44,11 +44,15 @@ public:
 	static bool isCommand(Tokens tokens);
 	Command& addSub(string name);
 	Command& sub(string name);
-	string call(Args& args, string status="");
+	vector<Command *>& subs();
+	string call(Args& args, string status="") noexcept(false);
 	Command& arm();
 	string operator()(Args args);
+	void printNames() const;
 	Command& operator=(const Command&) = delete;
-	static string exe(string scommand);
+	static string exe(string scommand) noexcept(false);
+	static string exeInput() noexcept(false);
+	static map<string, Command *>& getAll();
 	friend ostream& operator<<(ostream& out, const Command& cmd);
 };
 

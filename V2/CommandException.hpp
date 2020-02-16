@@ -16,5 +16,10 @@ public:
 	string what() const;
 };
 
+class PromptException
+{
+
+};
+
 
 #endif
