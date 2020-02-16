@@ -69,6 +69,35 @@ string command_handler::sys(Args args)
 	return scmd;
 }
 
+string command_handler::sys_result(Args args)
+{
+	string scmd = "";
+	while(not args.end())
+	{
+		scmd += (string) args + args.getSeparator();
+	}
+	string ret = "";
+	if(scmd.size())
+	{
+		scmd.erase(scmd.size() - 1);
+		FILE *cmdr = popen(scmd.c_str(), "r");
+		if(cmdr)
+		{
+			char buf[128] = {0};
+			while(fgets(buf, 127, cmdr) != NULL)
+			{
+				ret += buf;
+			}
+			pclose(cmdr);
+		}
+	}
+	if(ret.find('\n') != -1)
+	{
+		ret.erase(ret.size() - 1);
+	}
+	return ret;
+}
+
 string command_handler::nlstr(Args args)
 {
 	if(args[0].size())
@@ -92,7 +121,9 @@ void Prompt::init()
 			.proto(command_handler::help_name, 0, "print the names of all the commands");
 
 	csys
-		.proto(command_handler::sys, UNDEFINED, "executes a system terminal command");
+		.proto(command_handler::sys, UNDEFINED, "executes a system terminal command")
+		.sub("result")
+			.proto(command_handler::sys_result, UNDEFINED, "executes a system terminal command and return it");
 
 	cnlstr
 		.proto(command_handler::nlstr, 1, "change the hand catch prompt string");

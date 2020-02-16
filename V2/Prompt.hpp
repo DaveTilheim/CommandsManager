@@ -11,6 +11,7 @@ struct command_handler
 	static string helpU(Args args);
 	static string help_name(Args args);
 	static string sys(Args args);
+	static string sys_result(Args args);
 	static string nlstr(Args args);
 };
 
