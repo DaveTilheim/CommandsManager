@@ -30,6 +30,13 @@ string Memory::getType() const
 	return "none";
 }
 
+string Memory::type(string arg)
+{
+	if(Integer::isInteger(arg)) return "Integer";
+	if(Float::isFloat(arg)) return "Float";
+	return "String";
+}
+
 bool Memory::isNull() const
 {
 	return pdata == nullptr;
@@ -57,6 +64,52 @@ PrimitiveMemory::~PrimitiveMemory()
 	cerr << "PrimitiveMemory destroyed" << endl;
 }
 
+bool PrimitiveMemory::isPrimitive(string arg)
+{
+	if(Integer::isInteger(arg)) return true;
+	if(Float::isFloat(arg)) return true;
+	return false;
+}
+
+Integer::Integer(string value) : PrimitiveMemory(Integer::isInteger(value) ? atoi(value.c_str()) : 0)
+{
+	setType("Integer");
+}
+
+bool Integer::isInteger(string arg)
+{
+	for(int i = 0; i < arg.size(); i++)
+	{
+		if(not isdigit(arg[i])) return false;
+	}
+	return true;
+}
+
+Float::Float(string value) : PrimitiveMemory(Float::isFloat(value) ? atof(value.c_str()) : 0)
+{
+	setType("Float");
+}
+
+bool Float::isFloat(string arg)
+{
+	int ptCounter = 0;
+	for(int i = 0; i < arg.size(); i++)
+	{
+		if(not isdigit(arg[i]))
+		{
+			if(i != 0 and i != arg.size() -1 and ptCounter == 0 and arg[i] == '.')
+			{
+				ptCounter++;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 
 ObjectMemory::~ObjectMemory()
 {
@@ -64,3 +117,8 @@ ObjectMemory::~ObjectMemory()
 	cerr << "ObjectMemory destroyed" << endl;
 }
 
+
+String::String(const string& copy) : ObjectMemory(copy)
+{
+	setType("String");
+}

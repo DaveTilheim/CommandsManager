@@ -29,5 +29,7 @@ void Node::addMemory(string id, Memory *mem)
 
 Memory& Node::readMemory(string id)
 {
-	return *memory[id];
+	if(memory.find(id) != memory.end())
+		return *memory[id];
+	throw CommandException(id + " undefined");
 }

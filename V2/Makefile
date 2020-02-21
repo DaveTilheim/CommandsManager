@@ -19,3 +19,7 @@ main.o : main.cpp
 clean :
 	@rm -f *.o
 	@rm -f $(EXE)
+
+wclean:
+	@del *.o
+	@del $(EXE)

@@ -1,7 +1,9 @@
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
 #include <iostream>
+#include <functional>
 #include <map>
+#include <string>
 
 using namespace std;
 
@@ -34,6 +36,7 @@ public:
 	}
 	bool isNull() const;
 	static void addType(string type);
+	static string type(string arg);
 };
 
 class PrimitiveMemory : public Memory
@@ -41,8 +44,24 @@ class PrimitiveMemory : public Memory
 public:
 	using Memory::Memory;
 	~PrimitiveMemory();
+	static bool isPrimitive(string arg);
 };
 
+class Integer : public PrimitiveMemory
+{
+public:
+	Integer(string value);
+	using PrimitiveMemory::PrimitiveMemory;
+	static bool isInteger(string arg);
+};
+
+class Float : public PrimitiveMemory
+{
+public:
+	Float(string value);
+	using PrimitiveMemory::PrimitiveMemory;
+	static bool isFloat(string arg);
+};
 
 class ObjectMemory : public Memory
 {
@@ -61,6 +80,12 @@ public:
 		};
 	}
 	~ObjectMemory();
+};
+
+class String : public ObjectMemory
+{
+public:
+	String(const string& copy);
 };
 
 

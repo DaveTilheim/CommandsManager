@@ -1,5 +1,6 @@
 #ifndef NODE_HPP
 #define NODE_HPP
+#include "CommandException.hpp"
 #include "Memory.hpp"
 
 class Node
@@ -12,6 +13,7 @@ public:
 	~Node();
 	void addMemory(string id, Memory *mem);
 	Memory& readMemory(string id);
+	friend class StdCommand;
 };
 
 #endif
