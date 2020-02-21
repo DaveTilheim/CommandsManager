@@ -13,6 +13,7 @@ public:
 	~Node();
 	void addMemory(string id, Memory *mem);
 	Memory& readMemory(string id);
+	bool contains(string id) const;
 	friend class StdCommand;
 };
 

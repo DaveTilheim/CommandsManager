@@ -2,7 +2,7 @@
 
 
 map<string, Command *> Command::armedCommands = map<string, Command *>();
-
+string Command::lastResult = "";
 
 Command::Command(string name, const Command *super) : super(super), name(name)
 {
@@ -376,6 +376,7 @@ string Command::exe(string scommand) noexcept(false)
 		{
 			buf.erase(buf.size() - 1);
 		}
+		lastResult = buf;
 		return buf;
 	}
 	
@@ -402,4 +403,9 @@ void Command::printNames() const
 	{
 		s->printNames();
 	}
+}
+
+string Command::getLastResult()
+{
+	return lastResult;
 }

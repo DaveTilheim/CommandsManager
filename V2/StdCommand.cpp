@@ -5,6 +5,11 @@ Command StdCommand::ccreate = Command("create");
 Command StdCommand::cread = Command("read");
 Command StdCommand::cupdate = Command("update");
 Command StdCommand::ctype = Command("type");
+Command StdCommand::cadd = Command("add");
+Command StdCommand::csub = Command("sub");
+Command StdCommand::cmul = Command("mul");
+Command StdCommand::cdiv = Command("div");
+Command StdCommand::cresult = Command("result");
 Node StdCommand::root = Node();
 
 
@@ -93,6 +98,101 @@ string StdCommand::read_memory_command(Args args)
 	return buf;
 }
 
+inline double add(double v1, double v2)
+{
+	return v1 + v2;
+}
+
+inline double sub(double v1, double v2)
+{
+	return v1 - v2;
+}
+
+inline double mul(double v1, double v2)
+{
+	return v1 * v2;
+}
+
+inline double div_(double v1, double v2)
+{
+	return v1 / v2;
+}
+
+string operation(string val1, string val2, function<double(double, double)> callback)
+{
+	string type1 = Memory::type(val1);
+	string type2 = Memory::type(val2);
+	if(type1 == "Integer")
+	{
+		int i1 = atoi(val1.c_str());
+		if(type2 == "Integer")
+		{
+			int i2 = atoi(val2.c_str());
+			return to_string((int)callback(i1, i2));
+		}
+		else if(type2 == "Float")
+		{
+			double f2 = atof(val2.c_str());
+			return to_string(callback(i1, f2));
+		}
+	}
+	else if(type1 == "Float")
+	{
+		double f1 = atof(val1.c_str());
+		if(type2 == "Integer")
+		{
+			int i2 = atoi(val2.c_str());
+			return to_string(callback(f1, i2));
+		}
+		else if(type2 == "Float")
+		{
+			double f2 = atof(val2.c_str());
+			return to_string(callback(f1, f2));
+		}
+	}
+	throw CommandException("operation between " + type1 + " and " + type2 + " is not available");
+}
+
+string StdCommand::add_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	return operation(a1, a2, add);
+}
+
+string StdCommand::sub_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	return operation(a1, a2, sub);
+}
+
+string StdCommand::mul_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	return operation(a1, a2, mul);
+}
+
+string StdCommand::div_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	return operation(a1, a2, div_);
+}
+
+string StdCommand::result_command(Args args)
+{
+	return Command::getLastResult();
+}
 
 void StdCommand::initStdCommands()
 {
@@ -105,10 +205,20 @@ void StdCommand::initStdCommands()
 	cread.sub("memory").proto(read_memory_command, 0);
 	cupdate.proto(update_command, 2);
 	ctype.proto(type_command, 1);
+	cadd.proto(add_command, 2);
+	csub.proto(sub_command, 2);
+	cmul.proto(mul_command, 2);
+	cdiv.proto(div_command, 2);
+	cresult.proto(result_command, 0);
 	
 
 	cread.arm();
 	ccreate.arm();
 	cupdate.arm();
 	ctype.arm();
+	cadd.arm();
+	cdiv.arm();
+	cmul.arm();
+	csub.arm();
+	cresult.arm();
 }

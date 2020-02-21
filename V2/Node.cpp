@@ -33,3 +33,12 @@ Memory& Node::readMemory(string id)
 		return *memory[id];
 	throw CommandException(id + " undefined");
 }
+
+bool Node::contains(string id) const
+{
+	for(auto mem : memory)
+	{
+		if(id == mem.first) return true;
+	}
+	return false;
+}

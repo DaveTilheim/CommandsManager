@@ -22,4 +22,4 @@ clean :
 
 wclean:
 	@del *.o
-	@del $(EXE)
+	@del $(EXE).exe

@@ -26,6 +26,7 @@ private:
 	vector<Command *> subcommands;
 	static map<string, Command *> armedCommands;
 	static string Tabs(int n);
+	static string lastResult;
 public:
 	Command() = delete;
 	Command(const Command&) = delete;
@@ -53,6 +54,7 @@ public:
 	static string exe(string scommand) noexcept(false);
 	static string exeInput() noexcept(false);
 	static map<string, Command *>& getAll();
+	static string getLastResult();
 	friend ostream& operator<<(ostream& out, const Command& cmd);
 };
 
