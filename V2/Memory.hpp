@@ -25,6 +25,7 @@ public:
 	virtual ~Memory();
 	void setType(string type);
 	string getType() const;
+	string reads();
 	template <class T> const T& read()
 	{
 		return *(T *)pdata;
@@ -37,6 +38,19 @@ public:
 	bool isNull() const;
 	static void addType(string type);
 	static string type(string arg);
+	static Memory *create(string value);
+};
+
+class VectorMemory : public Memory
+{
+public:
+	VectorMemory();
+	VectorMemory(VectorMemory&);
+	~VectorMemory();
+	int size() const;
+	void clear();
+	Memory& get(int i);
+	void add(Memory *);
 };
 
 class PrimitiveMemory : public Memory

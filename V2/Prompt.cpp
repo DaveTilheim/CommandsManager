@@ -147,7 +147,7 @@ int Prompt::run(string nlstr)
 			string output = Command::exeInput();
 			if(output.size())
 			{
-				cout << ">> " + output << endl;
+				cout << "> " + output << endl;
 			}
 			cmdCounter++;
 		}
@@ -167,4 +167,25 @@ int Prompt::run(string nlstr)
 void Prompt::exit() noexcept(false)
 {
 	throw PromptException();
+}
+
+void Prompt::exeFile(string filename)
+{
+	ifstream file(filename);
+	if(file.is_open())
+	{
+		string command;
+		try
+		{
+			while(getline(file, command))
+			{
+				string output = Command::exe(command);
+			}
+		}
+		catch(const CommandException& err)
+		{
+			cout << err.what() << endl;
+		}
+		file.close();
+	}
 }

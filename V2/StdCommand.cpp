@@ -3,6 +3,7 @@
 
 Command StdCommand::ccreate = Command("create");
 Command StdCommand::cread = Command("read");
+Command StdCommand::cprint = Command("print");
 Command StdCommand::cupdate = Command("update");
 Command StdCommand::ctype = Command("type");
 Command StdCommand::cadd = Command("add");
@@ -11,49 +12,92 @@ Command StdCommand::cmul = Command("mul");
 Command StdCommand::cdiv = Command("div");
 Command StdCommand::cresult = Command("result");
 Command StdCommand::crepeat = Command("repeat");
+Command StdCommand::cinput = Command("input");
+Command StdCommand::cstr = Command("str");
 Node StdCommand::root = Node();
 
+
+void erase_indentifier(string& target)
+{
+	if(target[target.size() -1] == '\a')
+	{
+		target.erase(target.size() - 1);
+	}
+}
 
 string StdCommand::create_command(Args args)
 {
 	Token id = args;
 	Token value = args;
-	string type = Memory::type(value);
-	if(type == "Integer")
+	if(root.contains(value))
 	{
-		root.addMemory(id, new Integer(value));
-		return to_string(atoi(value.c_str()));
+		if(root.readMemory(value).getType() == "Vector")
+		{
+			args.setIndex(0);
+			return create_vector_command(args);
+		}
+		value = read_command(value);
 	}
-	else if(type == "Float")
+	erase_indentifier(value);
+	root.addMemory(id, Memory::create(value));
+	return id;
+}
+
+string StdCommand::create_vector_command(Args args)
+{
+	string id = args;
+	VectorMemory *v = new VectorMemory();
+	for(int i = args.getIndex(); i < args.count(); i++)
 	{
-		root.addMemory(id, new Float(value));
-		return to_string(atof(value.c_str()));
+		Token value = args[i];
+		string type;
+		string otherId;
+		if(root.contains(value))
+		{
+			otherId = value;
+			type = root.readMemory(value).getType();
+			value = read_command(otherId);
+		}
+		else
+		{
+			erase_indentifier(value);
+			type = Memory::type(value);
+		}
+		
+		if(type == "Integer")
+		{
+			v->add(new Integer(value));
+		}
+		else if(type == "Float")
+		{
+			v->add(new Float(value));
+		}
+		else if(type == "String")
+		{
+			v->add(new String(value));
+		}
+		else if(type == "Vector")
+		{
+			v->add(new VectorMemory(*dynamic_cast<VectorMemory *>(&root.readMemory(otherId))));
+		}
 	}
-	else if(type == "String")
-	{
-		root.addMemory(id, new String(value));
-	}
-	return value;
+	root.addMemory(id, v);
+	return id;
 }
 
 string StdCommand::read_command(Args args)
 {
 	string id = args;
 	Memory& mem = root.readMemory(id);
-	string type = mem.getType();
-	if(type == "Integer")
-	{
-		return to_string(mem.read<int>());
-	}
-	else if(type == "Float")
-	{
-		return to_string(mem.read<double>());
-	}
-	else if(type == "String")
-	{
-		return mem.read<string>();
-	}
-	return "null";
+	return mem.reads();
+}
+
+string StdCommand::read_vector_command(Args args)
+{
+	string id = args;
+	VectorMemory& vec = *dynamic_cast<VectorMemory *>(&root.readMemory(id));
+	int index = args;
+	return vec.get(index).reads();
 }
 
 string StdCommand::update_command(Args args)
@@ -61,6 +105,9 @@ string StdCommand::update_command(Args args)
 	Token id = args;
 	Token value = args;
 	Memory& mem = root.readMemory(id);
+	if(root.contains(value))
+		value = read_command(value);
+	erase_indentifier(value);
 	string type = Memory::type(value);
 	string memType = mem.getType();
 	if(memType == "Integer")
@@ -81,22 +128,52 @@ string StdCommand::update_command(Args args)
 	{
 		mem = value;
 	}
-	return value;
+	else if(memType == "Vector")
+	{
+		Tokens toks = value;
+		dynamic_cast<VectorMemory *>(&mem)->clear();
+		while(not toks.end())
+		{
+			dynamic_cast<VectorMemory *>(&mem)->add(Memory::create(toks));
+		}
+	}
+	return id;
 }
 
 string StdCommand::type_command(Args args)
 {
-	return root.readMemory(args).getType();
+	string expr = args;
+	if(root.contains(expr))
+		return root.readMemory(expr).getType();
+	erase_indentifier(expr);
+	return Memory::type(expr);
 }
 
-string StdCommand::read_memory_command(Args args)
+string StdCommand::print_command(Args args)
 {
-	string buf;
+	for(int i = 0; i < args.count(); i++)
+	{
+		string elm = args[i];
+		if(root.contains(elm))
+			cout << read_command(elm);
+		else
+		{
+			erase_indentifier(elm);
+			cout <<elm;
+		}
+		if(i != args.count() - 1) cout << " ";
+	}
+	cout << endl;
+	return "";
+}
+
+string StdCommand::print_memory_command(Args args)
+{
 	for(auto mem : root.memory)
 	{
-		cout << mem.first << " " << read_command(mem.first) << endl;
+		cout << mem.first << " " << read_command(mem.first) << " " << type_command(mem.first) << endl;
 	}
-	return buf;
+	return "";
 }
 
 inline double add(double v1, double v2)
@@ -159,7 +236,9 @@ string StdCommand::add_command(Args args)
 	string a1 = args;
 	string a2 = args;
 	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
 	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
 	return operation(a1, a2, add);
 }
 
@@ -168,7 +247,9 @@ string StdCommand::sub_command(Args args)
 	string a1 = args;
 	string a2 = args;
 	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
 	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
 	return operation(a1, a2, sub);
 }
 
@@ -177,7 +258,9 @@ string StdCommand::mul_command(Args args)
 	string a1 = args;
 	string a2 = args;
 	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
 	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
 	return operation(a1, a2, mul);
 }
 
@@ -186,7 +269,9 @@ string StdCommand::div_command(Args args)
 	string a1 = args;
 	string a2 = args;
 	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
 	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
 	return operation(a1, a2, div_);
 }
 
@@ -209,15 +294,31 @@ string StdCommand::repeat_command(Args args)
 	return to_string(n);
 }
 
+string StdCommand::input_command(Args args)
+{
+	string buff;
+	getline(cin, buff);
+	return buff;
+}
+
+string StdCommand::str_command(Args args)
+{
+	return (string)args + "\a";
+}
+
 void StdCommand::initStdCommands()
 {
 	Memory::addType("Integer");
 	Memory::addType("Float");
 	Memory::addType("String");
+	Memory::addType("Vector");
 	
 	ccreate.proto(create_command, 2);
+	ccreate.sub("vector").proto(create_vector_command, -1);
 	cread.proto(read_command, 1);
-	cread.sub("memory").proto(read_memory_command, 0);
+	cread.sub("vector").proto(read_vector_command, 2);
+	cprint.proto(print_command, -1);
+	cprint.sub("memory").proto(print_memory_command, 0);
 	cupdate.proto(update_command, 2);
 	ctype.proto(type_command, 1);
 	cadd.proto(add_command, 2);
@@ -226,10 +327,13 @@ void StdCommand::initStdCommands()
 	cdiv.proto(div_command, 2);
 	cresult.proto(result_command, 0);
 	crepeat.proto(repeat_command, -1);
+	cinput.proto(input_command, 0);
+	cstr.proto(str_command, 1);
 	
 
 	cread.arm();
 	ccreate.arm();
+	cprint.arm();
 	cupdate.arm();
 	ctype.arm();
 	cadd.arm();
@@ -238,4 +342,6 @@ void StdCommand::initStdCommands()
 	csub.arm();
 	cresult.arm();
 	crepeat.arm();
+	cinput.arm();
+	cstr.arm();
 }

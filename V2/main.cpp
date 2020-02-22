@@ -10,12 +10,9 @@
 int main(int argc, char const *argv[])
 {
 	StdCommand::initStdCommands();
-	Prompt::run(">>> ");
-	
+	//Prompt::run(">>> ");
+	Prompt::exeFile("main.lg");
 
-
-	
-	
 
 	return 0;
 }

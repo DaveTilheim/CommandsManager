@@ -2,6 +2,7 @@
 #define PROMPT_HPP
 #include "Command.hpp"
 #include <cstdlib>
+#include <fstream>
 
 
 struct command_handler
@@ -28,6 +29,7 @@ private:
 public:
 	static int run(string nlstr="> ");
 	static void exit() noexcept(false);
+	static void exeFile(string filename);
 };
 
 
