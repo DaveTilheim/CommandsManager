@@ -15,6 +15,7 @@ private:
 	static Command cmul;
 	static Command cdiv;
 	static Command cresult;
+	static Command crepeat;
 	static Node root;
 	static string create_command(Args args);
 	static string read_command(Args args);
@@ -26,6 +27,7 @@ private:
 	static string mul_command(Args args);
 	static string div_command(Args args);
 	static string result_command(Args args);
+	static string repeat_command(Args args);
 public:
 	static void initStdCommands();
 };

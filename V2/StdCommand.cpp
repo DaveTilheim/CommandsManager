@@ -10,6 +10,7 @@ Command StdCommand::csub = Command("sub");
 Command StdCommand::cmul = Command("mul");
 Command StdCommand::cdiv = Command("div");
 Command StdCommand::cresult = Command("result");
+Command StdCommand::crepeat = Command("repeat");
 Node StdCommand::root = Node();
 
 
@@ -194,6 +195,20 @@ string StdCommand::result_command(Args args)
 	return Command::getLastResult();
 }
 
+string StdCommand::repeat_command(Args args)
+{
+	int n = args;
+	string cmd;
+	if(args.count() <= 1) throw CommandException("has " + to_string(args.count()) + " args, expected 2 min");
+	for(int i = args.getIndex(); i < args.count(); i++) cmd += args[i] + " ";
+	cmd.erase(cmd.size()-1);
+	for(int i = 0; i < n; i++)
+	{
+		Command::exe(cmd);
+	}
+	return to_string(n);
+}
+
 void StdCommand::initStdCommands()
 {
 	Memory::addType("Integer");
@@ -210,6 +225,7 @@ void StdCommand::initStdCommands()
 	cmul.proto(mul_command, 2);
 	cdiv.proto(div_command, 2);
 	cresult.proto(result_command, 0);
+	crepeat.proto(repeat_command, -1);
 	
 
 	cread.arm();
@@ -221,4 +237,5 @@ void StdCommand::initStdCommands()
 	cmul.arm();
 	csub.arm();
 	cresult.arm();
+	crepeat.arm();
 }
