@@ -19,6 +19,9 @@ private:
 	static Command crepeat;
 	static Command cinput;
 	static Command cstr;
+	static Command cif;
+	static Command cend;
+	static Command cequal;
 	static Node root;
 	static string create_command(Args args);
 	static string create_vector_command(Args args);
@@ -36,6 +39,9 @@ private:
 	static string repeat_command(Args args);
 	static string input_command(Args args);
 	static string str_command(Args args);
+	static string if_command(Args args);
+	static string end_command(Args args);
+	static string equal_command(Args args);
 public:
 	static void initStdCommands();
 };

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include <map>
+#include <vector>
 #include <string>
 
 using namespace std;
@@ -36,6 +37,7 @@ public:
 		return *this;
 	}
 	bool isNull() const;
+	static bool equal(string other, string ther);
 	static void addType(string type);
 	static string type(string arg);
 	static Memory *create(string value);

@@ -3,6 +3,7 @@
 
 map<string, Command *> Command::armedCommands = map<string, Command *>();
 string Command::lastResult = "";
+bool Command::skipNextCmd = false;
 
 Command::Command(string name, const Command *super) : super(super), name(name)
 {
@@ -355,6 +356,7 @@ string Command::getCallStatus(string& cs)
 //static
 string Command::exe(string scommand) noexcept(false)
 {
+	if(scommand != "end" and Command::skipNextCmd) return "";
 	Tokens tcommand(scommand);
 	if(tcommand.count())
 	{
@@ -409,3 +411,9 @@ string Command::getLastResult()
 {
 	return lastResult;
 }
+
+void Command::skip(bool state)
+{
+	skipNextCmd = state;
+}
+

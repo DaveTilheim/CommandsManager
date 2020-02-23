@@ -8,7 +8,6 @@ Command Prompt::chelp = Command("help");
 Command Prompt::csys = Command("sys");
 Command Prompt::cnlstr = Command("nlstr");
 
-
 string command_handler::exit(Args args)
 {
 	Prompt::exit();

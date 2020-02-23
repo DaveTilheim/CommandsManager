@@ -27,6 +27,7 @@ private:
 	static map<string, Command *> armedCommands;
 	static string Tabs(int n);
 	static string lastResult;
+	static bool skipNextCmd;
 public:
 	Command() = delete;
 	Command(const Command&) = delete;
@@ -55,6 +56,7 @@ public:
 	static string exeInput() noexcept(false);
 	static map<string, Command *>& getAll();
 	static string getLastResult();
+	static void skip(bool state);
 	friend ostream& operator<<(ostream& out, const Command& cmd);
 };
 

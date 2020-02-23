@@ -14,6 +14,9 @@ Command StdCommand::cresult = Command("result");
 Command StdCommand::crepeat = Command("repeat");
 Command StdCommand::cinput = Command("input");
 Command StdCommand::cstr = Command("str");
+Command StdCommand::cif = Command("if");
+Command StdCommand::cend = Command("end");
+Command StdCommand::cequal = Command("equal");
 Node StdCommand::root = Node();
 
 
@@ -280,6 +283,8 @@ string StdCommand::result_command(Args args)
 	return Command::getLastResult();
 }
 
+
+
 string StdCommand::repeat_command(Args args)
 {
 	int n = args;
@@ -306,6 +311,42 @@ string StdCommand::str_command(Args args)
 	return (string)args + "\a";
 }
 
+string StdCommand::if_command(Args args)
+{
+	string value = args;
+	if(Float::isFloat(value) and atof(value.c_str()) == (double)0.0)
+	{
+		Command::skip(true);
+		return "false";
+	}
+	if(Integer::isInteger(value) and atoi(value.c_str()) == (int)0)
+	{
+		Command::skip(true);
+		return "false";
+	}
+	root.addNode();
+	return "true";
+}
+
+string StdCommand::end_command(Args args)
+{
+	if(not root.removeNode())
+		Command::skip(false);
+	return "";
+}
+
+
+string StdCommand::equal_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
+	return to_string(Memory::equal(a1, a2));
+}
+
 void StdCommand::initStdCommands()
 {
 	Memory::addType("Integer");
@@ -329,7 +370,9 @@ void StdCommand::initStdCommands()
 	crepeat.proto(repeat_command, -1);
 	cinput.proto(input_command, 0);
 	cstr.proto(str_command, 1);
-	
+	cif.proto(if_command, 1);
+	cend.proto(end_command, 0);
+	cequal.proto(equal_command, 2);
 
 	cread.arm();
 	ccreate.arm();
@@ -344,4 +387,7 @@ void StdCommand::initStdCommands()
 	crepeat.arm();
 	cinput.arm();
 	cstr.arm();
+	cif.arm();
+	cend.arm();
+	cequal.arm();
 }

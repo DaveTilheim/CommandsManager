@@ -1,13 +1,10 @@
 
-create i 3.14
-create j 10
-create s 2.5
+create age 0
 
-create vector vec i j s
+print "Entrez votre age"
 
-create counter -1
+update age input
 
-
-repeat 3 "print read vector vec update counter add counter 1"
-
-print add read vector vec 0 add read vector vec 1 read vector vec 2
+if equal age 18
+	print vous etes majeur
+end

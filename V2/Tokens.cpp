@@ -67,6 +67,9 @@ void Tokens::freeLock()
 
 void Tokens::setTokens(string s_tokens)
 {
+	int i;
+	for(i = 0; i < s_tokens.size() and s_tokens[i] == '\t'; i++);
+	s_tokens = s_tokens.substr(i);
 	s_tokens = applyLock(s_tokens);
 	stringstream ss(s_tokens);
 	string token;

@@ -7,11 +7,14 @@ class Node
 {
 private:
 	map<string, Memory *> memory;
-	map<string, Node *> memoryBlocks;
+	Node *child = nullptr;
+	Node *super;
 public:
-	Node();
+	Node(Node *super=nullptr);
 	~Node();
 	void addMemory(string id, Memory *mem);
+	void addNode();
+	bool removeNode();
 	Memory& readMemory(string id);
 	bool contains(string id) const;
 	friend class StdCommand;

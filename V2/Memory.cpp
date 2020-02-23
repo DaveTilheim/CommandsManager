@@ -13,6 +13,11 @@ Memory::~Memory()
 	//cout << "Memory destroyed" << endl;
 }
 
+bool Memory::equal(string v1, string v2)
+{
+	return v1 == v2;
+}
+
 void Memory::setType(string type)
 {
 	typeId = Memory::types[type];

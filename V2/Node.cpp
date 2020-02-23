@@ -1,7 +1,7 @@
 #include "Node.hpp"
 
 
-Node::Node() {}
+Node::Node(Node *super) : super(super) {}
 
 Node::~Node()
 {
@@ -9,29 +9,51 @@ Node::~Node()
 	{
 		delete it.second;
 	}
-	for(auto it : memoryBlocks)
-	{
-		delete it.second;
-	}
+	if(child) delete child;
 	memory.clear();
-	memoryBlocks.clear();
 	cerr << "Node destroyed" << endl;
 }
 
 void Node::addMemory(string id, Memory *mem)
 {
-	if(memory.find(id) != memory.end())
+	Node *depth = this;
+	while(depth->child) depth = depth->child;
+	if(depth->memory.find(id) != depth->memory.end())
 	{
-		delete memory[id];
+		delete depth->memory[id];
 	}
-	memory[id] = mem;
+	depth->memory[id] = mem;
+}
+
+void Node::addNode()
+{
+	Node *depth = this;
+	while(depth->child) depth = depth->child;
+	depth->child = new Node(depth);
 }
 
 Memory& Node::readMemory(string id)
 {
-	if(memory.find(id) != memory.end())
-		return *memory[id];
+	Node *depth = this;
+	while(depth->child) depth = depth->child;
+	while(depth)
+	{
+		if(depth->memory.find(id) != depth->memory.end())
+			return *depth->memory[id];
+		depth = depth->super;
+	}
 	throw CommandException(id + " undefined");
+}
+
+bool Node::removeNode()
+{
+	if(not child) return false;
+	Node *depth = this;
+	while(depth->child) depth = depth->child;
+	depth = depth->super;
+	delete depth->child;
+	depth->child = nullptr;
+	return true;
 }
 
 bool Node::contains(string id) const
@@ -40,5 +62,6 @@ bool Node::contains(string id) const
 	{
 		if(id == mem.first) return true;
 	}
+	if(child) return child->contains(id);
 	return false;
 }
