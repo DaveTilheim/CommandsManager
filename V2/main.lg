@@ -1,10 +1,16 @@
 
-create age 0
+print "debut du programme"
 
-print "Entrez votre age"
-
-update age input
-
-if equal age 18
-	print vous etes majeur
+jump fin
+begin
+	create i 1
+	label debut
+	print le compteur str i vaut i
+	update i add i 1
+	jump debut
 end
+label fin
+label ohoh
+jump debut
+
+print "fin du programme"

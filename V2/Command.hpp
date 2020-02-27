@@ -3,6 +3,7 @@
 #include <map>
 #include <ctype.h>
 #include <cstdlib>
+#include <fstream>
 #include "Prototype.hpp"
 
 #ifdef DEBUG_MODE
@@ -27,7 +28,8 @@ private:
 	static map<string, Command *> armedCommands;
 	static string Tabs(int n);
 	static string lastResult;
-	static bool skipNextCmd;
+	static vector<string> commandFileBuffer;
+	static int currentFileIndex;
 public:
 	Command() = delete;
 	Command(const Command&) = delete;
@@ -54,9 +56,12 @@ public:
 	Command& operator=(const Command&) = delete;
 	static string exe(string scommand) noexcept(false);
 	static string exeInput() noexcept(false);
+	static void exeFile(string filename);
+	static vector<string>& getFileBuffer();
 	static map<string, Command *>& getAll();
 	static string getLastResult();
-	static void skip(bool state);
+	static int getFileIndex();
+	static void setFileIndex(int);
 	friend ostream& operator<<(ostream& out, const Command& cmd);
 };
 

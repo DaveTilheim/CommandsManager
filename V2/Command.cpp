@@ -3,7 +3,8 @@
 
 map<string, Command *> Command::armedCommands = map<string, Command *>();
 string Command::lastResult = "";
-bool Command::skipNextCmd = false;
+vector<string> Command::commandFileBuffer = vector<string>();
+int Command::currentFileIndex = 0;
 
 Command::Command(string name, const Command *super) : super(super), name(name)
 {
@@ -356,8 +357,8 @@ string Command::getCallStatus(string& cs)
 //static
 string Command::exe(string scommand) noexcept(false)
 {
-	if(scommand != "end" and Command::skipNextCmd) return "";
 	Tokens tcommand(scommand);
+	//cout << tcommand << endl;
 	if(tcommand.count())
 	{
 		string buf;
@@ -392,6 +393,57 @@ string Command::exeInput() noexcept(false)
 	return Command::exe(buf);
 }
 
+void Command::exeFile(string filename)
+{
+	ifstream file(filename);
+	vector<string>& commands = Command::commandFileBuffer;
+	if(file.is_open())
+	{
+		string command;
+		while(getline(file, command))
+		{
+			int i = 0;
+			for(i = 0; i < command.size(); i++)
+			{
+				if(command[i] != '\t') break;
+			}
+			command.erase(0, i);
+			if(command.size())
+				commands.push_back(command);
+		}
+		file.close();
+	}
+	try
+	{
+		for(currentFileIndex = 0; currentFileIndex < commands.size(); currentFileIndex++)
+		{
+			Command::exe(commands[currentFileIndex]);
+		}
+	}
+	catch(const CommandException& err)
+	{
+		cout << err.what() << endl;
+	}
+}
+
+vector<string>& Command::getFileBuffer()
+{
+	return commandFileBuffer;
+}
+
+int Command::getFileIndex()
+{
+	return currentFileIndex;
+}
+
+void Command::setFileIndex(int i)
+{
+	currentFileIndex = i - 1;
+	if(currentFileIndex < 0) currentFileIndex = -1;
+	else if(currentFileIndex >= commandFileBuffer.size()) currentFileIndex = commandFileBuffer.size() - 2;
+}
+
+
 map<string, Command *>& Command::getAll()
 {
 	return armedCommands;
@@ -410,10 +462,5 @@ void Command::printNames() const
 string Command::getLastResult()
 {
 	return lastResult;
-}
-
-void Command::skip(bool state)
-{
-	skipNextCmd = state;
 }
 

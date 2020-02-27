@@ -1,6 +1,7 @@
 #include "StdCommand.hpp"
 
 
+Command StdCommand::cexit = Command("exit");
 Command StdCommand::ccreate = Command("create");
 Command StdCommand::cread = Command("read");
 Command StdCommand::cprint = Command("print");
@@ -16,8 +17,14 @@ Command StdCommand::cinput = Command("input");
 Command StdCommand::cstr = Command("str");
 Command StdCommand::cif = Command("if");
 Command StdCommand::cend = Command("end");
+Command StdCommand::cbegin = Command("begin");
+Command StdCommand::celse = Command("else");
 Command StdCommand::cequal = Command("equal");
-Node StdCommand::root = Node();
+Command StdCommand::cjump = Command("jump");
+Command StdCommand::clabel = Command("label");
+Node StdCommand::root = Node(nullptr, "root");
+int StdCommand::nodeCounter = 0;
+map<string, int> StdCommand::labels = map<string, int>();
 
 
 void erase_indentifier(string& target)
@@ -26,6 +33,14 @@ void erase_indentifier(string& target)
 	{
 		target.erase(target.size() - 1);
 	}
+}
+
+string StdCommand::exit_command(Args args)
+{
+	if(args.end())
+		throw CommandException("success");
+	throw CommandException(args);
+	return "error";
 }
 
 string StdCommand::create_command(Args args)
@@ -172,9 +187,10 @@ string StdCommand::print_command(Args args)
 
 string StdCommand::print_memory_command(Args args)
 {
-	for(auto mem : root.memory)
+	auto hashMap = root.readAllMemory();
+	for(auto mem : hashMap)
 	{
-		cout << mem.first << " " << read_command(mem.first) << " " << type_command(mem.first) << endl;
+		cout << mem.first << " " << mem.second->reads() << " " << mem.second->getType() << endl;
 	}
 	return "";
 }
@@ -316,23 +332,91 @@ string StdCommand::if_command(Args args)
 	string value = args;
 	if(Float::isFloat(value) and atof(value.c_str()) == (double)0.0)
 	{
-		Command::skip(true);
 		return "false";
 	}
 	if(Integer::isInteger(value) and atoi(value.c_str()) == (int)0)
 	{
-		Command::skip(true);
 		return "false";
 	}
 	root.addNode();
 	return "true";
 }
 
-string StdCommand::end_command(Args args)
+string StdCommand::end_command_0(Args args)
 {
-	if(not root.removeNode())
-		Command::skip(false);
+	root.removeNode();
 	return "";
+}
+
+string StdCommand::end_command_1(Args args)
+{
+	root.removeNode(args);
+	return "";
+}
+
+string StdCommand::begin_command_0(Args args)
+{
+	root.addNode();
+	return "";
+}
+
+string StdCommand::begin_command_1(Args args)
+{
+	root.addNode(args);
+	return "";
+}
+
+string StdCommand::else_command(Args args)
+{
+	
+	return "";
+}
+
+string StdCommand::jump_command(Args args)
+{
+	if(Integer::isInteger(args[0]))
+	{
+		int step = args;
+		Command::setFileIndex(Command::getFileIndex() + step);
+	}
+	else
+	{
+		string label = args;
+		if(labels.find(label) == labels.end())
+		{
+			auto& buffer = Command::getFileBuffer();
+			for(int i = 0; i < buffer.size(); i++)
+			{
+				if(buffer[i].find(' ') != string::npos)
+				{
+					string cmd = buffer[i].substr(0, buffer[i].find(' '));
+					string name = buffer[i].substr(buffer[i].find(' ')+1);
+					if(cmd == "label" and name == label)
+					{
+						int tmp = Command::getFileIndex();
+						Command::setFileIndex(i+1);
+						Command::exe(buffer[i]);
+						Command::setFileIndex(tmp);
+						break;
+					}
+				}
+			}
+		}
+		Command::setFileIndex(labels[label]);
+	}
+	return "";
+}
+
+string StdCommand::label_command(Args args)
+{
+	string name = args;
+	if(labels.find(name) == labels.end())
+	{
+		//cout << "Label (" + name + ") set at instruction n°" << Command::getFileIndex() << endl;
+		labels[name] = Command::getFileIndex();
+		return name;
+	}
+	return "null";
 }
 
 
@@ -354,6 +438,8 @@ void StdCommand::initStdCommands()
 	Memory::addType("String");
 	Memory::addType("Vector");
 	
+	cexit.proto(exit_command, -1);
+	cexit.proto(exit_command, 0);
 	ccreate.proto(create_command, 2);
 	ccreate.sub("vector").proto(create_vector_command, -1);
 	cread.proto(read_command, 1);
@@ -371,9 +457,16 @@ void StdCommand::initStdCommands()
 	cinput.proto(input_command, 0);
 	cstr.proto(str_command, 1);
 	cif.proto(if_command, 1);
-	cend.proto(end_command, 0);
+	cend.proto(end_command_0, 0);
+	cend.proto(end_command_1, 1);
+	cbegin.proto(begin_command_0, 0);
+	cbegin.proto(begin_command_1, 1);
+	celse.proto(else_command, 0);
 	cequal.proto(equal_command, 2);
+	cjump.proto(jump_command, 1);
+	clabel.proto(label_command, 1);
 
+	cexit.arm();
 	cread.arm();
 	ccreate.arm();
 	cprint.arm();
@@ -389,5 +482,9 @@ void StdCommand::initStdCommands()
 	cstr.arm();
 	cif.arm();
 	cend.arm();
+	cbegin.arm();
+	celse.arm();
 	cequal.arm();
+	cjump.arm();
+	clabel.arm();
 }

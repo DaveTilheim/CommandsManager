@@ -167,24 +167,3 @@ void Prompt::exit() noexcept(false)
 {
 	throw PromptException();
 }
-
-void Prompt::exeFile(string filename)
-{
-	ifstream file(filename);
-	if(file.is_open())
-	{
-		string command;
-		try
-		{
-			while(getline(file, command))
-			{
-				string output = Command::exe(command);
-			}
-		}
-		catch(const CommandException& err)
-		{
-			cout << err.what() << endl;
-		}
-		file.close();
-	}
-}

@@ -29,7 +29,6 @@ private:
 public:
 	static int run(string nlstr="> ");
 	static void exit() noexcept(false);
-	static void exeFile(string filename);
 };
 
 
