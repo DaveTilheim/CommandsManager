@@ -408,7 +408,7 @@ void Command::exeFile(string filename)
 				if(command[i] != '\t') break;
 			}
 			command.erase(0, i);
-			if(command.size())
+			if(command.size() and command[0] != '!')
 				commands.push_back(command);
 		}
 		file.close();
@@ -417,8 +417,19 @@ void Command::exeFile(string filename)
 	{
 		for(currentFileIndex = 0; currentFileIndex < commands.size(); currentFileIndex++)
 		{
-			Command::exe(commands[currentFileIndex]);
+			try
+			{
+				Command::exe(commands[currentFileIndex]);
+			}
+			catch(const IgnoreException& e)
+			{
+
+			}
 		}
+	}
+	catch(const string& msg)
+	{
+		cout << msg << endl;
 	}
 	catch(const CommandException& err)
 	{

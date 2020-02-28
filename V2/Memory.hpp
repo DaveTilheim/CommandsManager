@@ -38,6 +38,7 @@ public:
 	}
 	bool isNull() const;
 	static bool equal(string other, string ther);
+	static bool less(string other, string ther);
 	static void addType(string type);
 	static string type(string arg);
 	static Memory *create(string value);
@@ -48,6 +49,7 @@ class VectorMemory : public Memory
 public:
 	VectorMemory();
 	VectorMemory(VectorMemory&);
+	VectorMemory(const VectorMemory&) = delete;
 	~VectorMemory();
 	int size() const;
 	void clear();

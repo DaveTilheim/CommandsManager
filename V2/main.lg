@@ -1,16 +1,31 @@
 
-print "debut du programme"
+!fonction permettant de renvoyer l indice dans lequel se trouve l élément elem dans le vecteur vec
 
-jump fin
-begin
-	create i 1
-	label debut
-	print le compteur str i vaut i
-	update i add i 1
-	jump debut
-end
-label fin
-label ohoh
-jump debut
+function find vec elem
 
-print "fin du programme"
+	create n 4
+	create i 0
+	label in
+	while less i n
+		if equal read vector vec i elem
+			return i
+		end
+		update i add i 1
+	end while
+
+	label out
+
+	return null
+
+end function
+
+
+
+create vector v 5 2.5 "Hello world!" 3.14
+
+call find v 3.14
+
+print "retour: " ret
+
+
+

@@ -15,8 +15,9 @@ public:
 	Node(Node *super=nullptr, string name="m");
 	~Node();
 	void addMemory(string id, Memory *mem);
-	void addNode(string name="");
-	bool removeNode(string name="") noexcept(false);
+	string getCurrentName();
+	string addNode(string name="");
+	string removeNode(string name="") noexcept(false);
 	Memory& readMemory(string id);
 	map<string, Memory *> readAllMemory();
 	bool contains(string id) const;

@@ -20,8 +20,15 @@ Command StdCommand::cend = Command("end");
 Command StdCommand::cbegin = Command("begin");
 Command StdCommand::celse = Command("else");
 Command StdCommand::cequal = Command("equal");
+Command StdCommand::cless = Command("less");
 Command StdCommand::cjump = Command("jump");
 Command StdCommand::clabel = Command("label");
+Command StdCommand::cignore = Command("ignore");
+Command StdCommand::cwhile = Command("while");
+Command StdCommand::cfunction = Command("function");
+Command StdCommand::creturn = Command("return");
+Command StdCommand::ccall = Command("call");
+Command StdCommand::cret = Command("ret");
 Node StdCommand::root = Node(nullptr, "root");
 int StdCommand::nodeCounter = 0;
 map<string, int> StdCommand::labels = map<string, int>();
@@ -52,7 +59,9 @@ string StdCommand::create_command(Args args)
 		if(root.readMemory(value).getType() == "Vector")
 		{
 			args.setIndex(0);
-			return create_vector_command(args);
+			VectorMemory *v = new VectorMemory(*dynamic_cast<VectorMemory *>(&root.readMemory(value)));
+			root.addMemory(id, v);
+			return id;
 		}
 		value = read_command(value);
 	}
@@ -96,7 +105,8 @@ string StdCommand::create_vector_command(Args args)
 		}
 		else if(type == "Vector")
 		{
-			v->add(new VectorMemory(*dynamic_cast<VectorMemory *>(&root.readMemory(otherId))));
+			VectorMemory& vec = *dynamic_cast<VectorMemory *>(&root.readMemory(otherId));
+			v->add(new VectorMemory(vec));
 		}
 	}
 	root.addMemory(id, v);
@@ -114,8 +124,10 @@ string StdCommand::read_vector_command(Args args)
 {
 	string id = args;
 	VectorMemory& vec = *dynamic_cast<VectorMemory *>(&root.readMemory(id));
-	int index = args;
-	return vec.get(index).reads();
+	string value = args;
+	if(root.contains(value))
+		value = read_command(value);
+	return vec.get(atoi(value.c_str())).reads();
 }
 
 string StdCommand::update_command(Args args)
@@ -327,19 +339,46 @@ string StdCommand::str_command(Args args)
 	return (string)args + "\a";
 }
 
+bool ifSuccess = true;
 string StdCommand::if_command(Args args)
 {
 	string value = args;
-	if(Float::isFloat(value) and atof(value.c_str()) == (double)0.0)
+	if((Float::isFloat(value) and atof(value.c_str()) == (double)0.0) or (Integer::isInteger(value) and atoi(value.c_str()) == (int)0))
 	{
+		ifSuccess = false;
+		int blockCounter = 1, i;
+		for(i = Command::getFileIndex() + 1; i < Command::getFileBuffer().size(); i++)
+		{
+			Tokens cmd = Command::getFileBuffer()[i];
+			if(cmd[0] == "if" or cmd[0] == "while") blockCounter++;
+			else if(cmd[0] == "end")
+			{
+				blockCounter--;
+				if(blockCounter == 0)
+					break;
+			}
+			else if(cmd[0] == "else")
+			{
+				blockCounter--;
+				if(blockCounter == 0)
+				{
+					i--;
+					break;
+				}
+			}
+		}
+		Command::setFileIndex(i+1);
 		return "false";
 	}
-	if(Integer::isInteger(value) and atoi(value.c_str()) == (int)0)
-	{
-		return "false";
-	}
-	root.addNode();
+	ifSuccess = true;
+	begin_command_0(args);
 	return "true";
+}
+
+string StdCommand::else_command(Args args)
+{
+	if_command(Tokens(to_string(not ifSuccess)));
+	return "";
 }
 
 string StdCommand::end_command_0(Args args)
@@ -366,18 +405,47 @@ string StdCommand::begin_command_1(Args args)
 	return "";
 }
 
-string StdCommand::else_command(Args args)
-{
-	
-	return "";
-}
-
 string StdCommand::jump_command(Args args)
 {
 	if(Integer::isInteger(args[0]))
 	{
 		int step = args;
 		Command::setFileIndex(Command::getFileIndex() + step);
+	}
+	else
+	{
+		string label = args;
+		if(labels.find(label) == labels.end())
+		{
+			auto& buffer = Command::getFileBuffer();
+			for(int i = 0; i < buffer.size(); i++)
+			{
+				if(buffer[i].find(' ') != string::npos)
+				{
+					string cmd = buffer[i].substr(0, buffer[i].find(' '));
+					string name = buffer[i].substr(buffer[i].find(' ')+1);
+					if(cmd == "label" and name == label)
+					{
+						int tmp = Command::getFileIndex();
+						Command::setFileIndex(i+1);
+						Command::exe(buffer[i]);
+						Command::setFileIndex(tmp);
+						break;
+					}
+				}
+			}
+		}
+		Command::setFileIndex(labels[label]);
+	}
+	return "";
+}
+
+string StdCommand::jump_to_command(Args args)
+{
+	if(Integer::isInteger(args[0]))
+	{
+		int step = args;
+		Command::setFileIndex(step);
 	}
 	else
 	{
@@ -419,6 +487,12 @@ string StdCommand::label_command(Args args)
 	return "null";
 }
 
+string StdCommand::ignore_command(Args args) noexcept(false)
+{
+	throw IgnoreException();
+	return "null";
+}
+
 
 string StdCommand::equal_command(Args args)
 {
@@ -430,6 +504,141 @@ string StdCommand::equal_command(Args args)
 	erase_indentifier(a2);
 	return to_string(Memory::equal(a1, a2));
 }
+
+string StdCommand::less_command(Args args)
+{
+	string a1 = args;
+	string a2 = args;
+	if(root.contains(a1)) a1 = read_command(a1);
+	erase_indentifier(a1);
+	if(root.contains(a2)) a2 = read_command(a2);
+	erase_indentifier(a2);
+	return to_string(Memory::less(a1, a2));
+}
+
+int whileDepth = 0;
+map<int, int> whileMap;
+string StdCommand::while_command(Args args)
+{
+	if_command(args);
+	if(ifSuccess)
+	{
+		whileDepth++;
+		whileMap[whileDepth] = Command::getFileIndex();
+	}
+	else
+	{
+		if(whileMap.find(whileDepth) != whileMap.end())
+		{
+			whileMap.erase(whileDepth);
+			whileDepth--;
+		}
+	}
+	ifSuccess = true;
+	return "";
+}
+
+string StdCommand::end_while_command(Args args)
+{
+	if(not whileDepth) throw string("not in while block");
+	end_command_0(args);
+	jump_to_command(Tokens(to_string(whileMap[whileDepth])));
+	return "";
+}
+
+struct __Function
+{
+	int location;
+	int nargs;
+	vector<string> args;
+	__Function(){}
+	__Function(int l, int n) : location(l), nargs(n){}
+	__Function(const __Function&f) : location(f.location), nargs(f.nargs){}
+};
+map<string, __Function> functionMap;
+string StdCommand::function_command(Args args)
+{
+	string fname = args;
+	Args arguments = args.partial();
+	if(functionMap.find(fname) != functionMap.end())
+	{
+
+		const __Function& func = functionMap[fname];
+		if(arguments.count() != func.args.size()) throw CommandException(to_string(func.args.size()) + " gave but expected " + to_string(func.nargs));
+		begin_command_0(args);
+		for(int i = 0; i < func.nargs; i++)
+		{
+			Tokens toks(arguments[i]);
+			toks.getTokens().push_back(func.args[i]);
+			//cout << "create " + arguments[i] + " " + func.args[i] << endl;
+			create_command(toks);
+		}
+	}
+	else
+	{
+		functionMap[fname] = __Function(Command::getFileIndex(), arguments.count());
+		int i;
+		for(i = Command::getFileIndex(); i < Command::getFileBuffer().size(); i++)
+		{
+			if(Command::getFileBuffer()[i] == "end function" and Command::getFileBuffer()[i].size() == string("end function").size())
+			{
+				break;
+			}
+		}
+		Command::setFileIndex(i+1);
+	}
+	return "";
+}
+
+vector<string> returnValues;
+string StdCommand::return_command(Args args)
+{
+	string ret = args;
+	if(root.contains(ret))
+		ret = read_command(ret);
+	returnValues.push_back(ret);
+	end_function_command(args);
+	return "";
+}
+
+vector<int> callLocations;
+string StdCommand::call_command(Args args)
+{
+	string fname = args;
+	if(functionMap.find(fname) == functionMap.end()) throw CommandException(fname + " is not defined");
+	__Function& func = functionMap[fname];
+	func.args.clear();
+	while(not args.end()) func.args.push_back(args);
+	callLocations.push_back(Command::getFileIndex());
+	jump_to_command(Tokens(to_string(func.location)));
+	return to_string(func.location);
+}
+
+string StdCommand::end_function_command(Args args)
+{
+	end_command_0(args);
+	Command::setFileIndex(callLocations.back() + 1);
+	callLocations.pop_back();
+	return "";
+}
+
+string StdCommand::ret_command_0(Args args)
+{
+	if(returnValues.size() == 0) return "null";
+	string ret = returnValues.back();
+	returnValues.pop_back();
+	return ret;
+}
+
+string StdCommand::ret_command_1(Args args)
+{
+	int i = args;
+	if(returnValues.size() <= i or i < 0) return "null";
+	string ret = returnValues[i];
+	returnValues.erase(returnValues.begin() + i);
+	return ret;
+}
+
 
 void StdCommand::initStdCommands()
 {
@@ -459,12 +668,24 @@ void StdCommand::initStdCommands()
 	cif.proto(if_command, 1);
 	cend.proto(end_command_0, 0);
 	cend.proto(end_command_1, 1);
+	cend.sub("while").proto(end_while_command, 0);
+	cend.sub("function").proto(end_function_command, 0);
 	cbegin.proto(begin_command_0, 0);
 	cbegin.proto(begin_command_1, 1);
 	celse.proto(else_command, 0);
 	cequal.proto(equal_command, 2);
 	cjump.proto(jump_command, 1);
+	cjump.sub("to").proto(jump_to_command, 1);
 	clabel.proto(label_command, 1);
+	cignore.proto(ignore_command, 0);
+	cwhile.proto(while_command, 1);
+	cfunction.proto(function_command, -1);
+	creturn.proto(return_command, 1);
+	ccall.proto(call_command, -1);
+	cret.proto(ret_command_0, 0);
+	cret.proto(ret_command_1, 1);
+	cless.proto(less_command, 2);
+
 
 	cexit.arm();
 	cread.arm();
@@ -487,4 +708,11 @@ void StdCommand::initStdCommands()
 	cequal.arm();
 	cjump.arm();
 	clabel.arm();
+	cignore.arm();
+	cwhile.arm();
+	cfunction.arm();
+	creturn.arm();
+	ccall.arm();
+	cret.arm();
+	cless.arm();
 }

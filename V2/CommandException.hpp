@@ -21,5 +21,10 @@ class PromptException
 
 };
 
+class IgnoreException
+{
+
+};
+
 
 #endif

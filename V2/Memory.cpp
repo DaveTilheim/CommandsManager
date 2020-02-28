@@ -18,6 +18,19 @@ bool Memory::equal(string v1, string v2)
 	return v1 == v2;
 }
 
+bool Memory::less(string v1, string v2)
+{
+	if(Float::isFloat(v1) and Float::isFloat(v2))
+	{
+		if(Integer::isInteger(v1) and Integer::isInteger(v2))
+		{
+			return atoi(v1.c_str()) < atoi(v2.c_str());
+		}
+		return atof(v1.c_str()) < atof(v2.c_str());
+	}
+	return v1.size() < v2.size();
+}
+
 void Memory::setType(string type)
 {
 	typeId = Memory::types[type];

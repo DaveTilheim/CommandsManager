@@ -3,12 +3,7 @@
 #include "Command.hpp"
 #include "Node.hpp"
 
-struct Label
-{
-	string name;
-	int line;
-	Label(string name, int line) : name(name), line(line) {}
-};
+
 
 class StdCommand
 {
@@ -32,8 +27,15 @@ private:
 	static Command cend;
 	static Command celse;
 	static Command cequal;
+	static Command cless;
 	static Command cjump;
 	static Command clabel;
+	static Command cignore;
+	static Command cwhile;
+	static Command cfunction;
+	static Command creturn;
+	static Command ccall;
+	static Command cret;
 	static Node root;
 	static int nodeCounter;
 	static map<string, int> labels;
@@ -61,10 +63,23 @@ private:
 	static string end_command_1(Args args);
 	static string else_command(Args args);
 	static string equal_command(Args args);
+	static string less_command(Args args);
 	static string jump_command(Args args);
+	static string jump_to_command(Args args);
 	static string label_command(Args args);
+	static string ignore_command(Args args) noexcept(false);
+	static string while_command(Args args);
+	static string end_while_command(Args args);
+	static string function_command(Args args);
+	static string return_command(Args args);
+	static string call_command(Args args);
+	static string end_function_command(Args args);
+	static string ret_command_0(Args args);
+	static string ret_command_1(Args args);
 public:
 	static void initStdCommands();
 };
+
+
 
 #endif

@@ -8,6 +8,7 @@ Node::Node(Node *super, string name) : super(super)
 		this->name = name;
 	else
 		this->name = to_string(idCounter++);
+	//cout << "[Node created " << this->name << endl;
 }
 
 Node::~Node()
@@ -19,7 +20,7 @@ Node::~Node()
 	}
 	if(child) delete child;
 	memory.clear();
-	//cerr << "Node destroyed" << endl;
+	//cout << "[Node destroyed " << this->name << endl;
 }
 
 void Node::addMemory(string id, Memory *mem)
@@ -33,11 +34,12 @@ void Node::addMemory(string id, Memory *mem)
 	depth->memory[id] = mem;
 }
 
-void Node::addNode(string name)
+string Node::addNode(string name)
 {
 	Node *depth = this;
 	while(depth->child) depth = depth->child;
 	depth->child = new Node(depth, name);
+	return depth->child->name;
 }
 
 Memory& Node::readMemory(string id)
@@ -70,14 +72,17 @@ map<string, Memory *> Node::readAllMemory()
 	return ret;
 }
 
-bool Node::removeNode(string name) noexcept(false)
+string Node::removeNode(string name) noexcept(false)
 {
-	if(not child) return false;
+	if(not child) return "";
 	Node *depth = this;
 	while(depth->child) depth = depth->child;
 	depth = depth->super;
 	if(name.size() == 0)
+	{
+		name = depth->child->name;
 		delete depth->child;
+	}
 	else
 	{
 		while(depth)
@@ -99,7 +104,14 @@ bool Node::removeNode(string name) noexcept(false)
 		throw CommandException("block does not exists");
 	}
 	depth->child = nullptr;
-	return true;
+	return name;
+}
+
+string Node::getCurrentName()
+{
+	Node *node = this;
+	while(node->child) node = node->child;
+	return node->name;
 }
 
 bool Node::contains(string id) const
