@@ -1,5 +1,5 @@
 
-!fonction permettant d élever le nombre value à la puissance power
+
 
 function pow value power
 
@@ -15,28 +15,32 @@ function pow value power
 
 end function
 
-function recursive n
+
+!suite de fibonacci en récursif
+
+function fib n
 	
 	if less n 0
-		return 'end'
+		return null
+	else
+		if less n 2
+			return n
+		end
 	end
+
+	call fib sub n 1
+	call fib sub n 2
 	
-	call recursive sub n 1
-	return ret
+	return add ret:0 ret
 
 end function
-
 
 
 print "power of:"
 
 create number input
 
-create i 0
+call fib number
 
-while less i 10
-	call pow number i
-	print number exp i = ret
-	update i add i 1
-end while
+print fibonacci of number is ret
 

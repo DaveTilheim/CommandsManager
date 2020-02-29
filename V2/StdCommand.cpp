@@ -559,9 +559,9 @@ string StdCommand::function_command(Args args)
 	if(functionMap.find(fname) != functionMap.end())
 	{
 		const __Function& func = functionMap[fname];
-		nodeStack.push_back(root.getCurrentName());
 		if(arguments.count() != func.args.size()) throw CommandException(to_string(func.args.size()) + " gave but expected " + to_string(func.nargs));
 		begin_command_0(args);
+		nodeStack.push_back(root.getCurrentName());
 		for(int i = 0; i < func.nargs; i++)
 		{
 			Tokens toks(arguments[i]);
