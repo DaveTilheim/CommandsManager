@@ -551,14 +551,15 @@ struct __Function
 	__Function(const __Function&f) : location(f.location), nargs(f.nargs){}
 };
 map<string, __Function> functionMap;
+vector<string> nodeStack;
 string StdCommand::function_command(Args args)
 {
 	string fname = args;
 	Args arguments = args.partial();
 	if(functionMap.find(fname) != functionMap.end())
 	{
-
 		const __Function& func = functionMap[fname];
+		nodeStack.push_back(root.getCurrentName());
 		if(arguments.count() != func.args.size()) throw CommandException(to_string(func.args.size()) + " gave but expected " + to_string(func.nargs));
 		begin_command_0(args);
 		for(int i = 0; i < func.nargs; i++)
@@ -611,7 +612,8 @@ string StdCommand::call_command(Args args)
 
 string StdCommand::end_function_command(Args args)
 {
-	end_command_0(args);
+	end_command_1(Tokens(nodeStack.back()));
+	nodeStack.pop_back();
 	Command::setFileIndex(callLocations.back() + 1);
 	callLocations.pop_back();
 	return "";
