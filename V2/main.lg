@@ -1,31 +1,29 @@
 
-!fonction permettant de renvoyer l indice dans lequel se trouve l élément elem dans le vecteur vec
+!fonction permettant d élever le nombre value à la puissance power
 
-function find vec elem
+function pow value power
 
-	create n 4
 	create i 0
-	label in
-	while less i n
-		if equal read vector vec i elem
-			return i
-		end
+	create powered value
+	update powered 1
+	while less i power
+		update powered mul powered value
 		update i add i 1
 	end while
 
-	label out
-
-	return null
+	return powered
 
 end function
 
+print "power of:"
 
+create number input
 
-create vector v 5 2.5 "Hello world!" 3.14
+create i 0
 
-call find v 3.14
-
-print "retour: " ret
-
-
+while less i 10
+	call pow number i
+	print number exp i = ret
+	update i add i 1
+end while
 

@@ -520,19 +520,12 @@ int whileDepth = 0;
 map<int, int> whileMap;
 string StdCommand::while_command(Args args)
 {
+	int curi = Command::getFileIndex();
 	if_command(args);
 	if(ifSuccess)
 	{
 		whileDepth++;
 		whileMap[whileDepth] = Command::getFileIndex();
-	}
-	else
-	{
-		if(whileMap.find(whileDepth) != whileMap.end())
-		{
-			whileMap.erase(whileDepth);
-			whileDepth--;
-		}
 	}
 	ifSuccess = true;
 	return "";
@@ -543,6 +536,8 @@ string StdCommand::end_while_command(Args args)
 	if(not whileDepth) throw string("not in while block");
 	end_command_0(args);
 	jump_to_command(Tokens(to_string(whileMap[whileDepth])));
+	whileMap.erase(whileDepth);
+	whileDepth--;
 	return "";
 }
 
