@@ -413,6 +413,11 @@ void Command::exeFile(string filename)
 		}
 		file.close();
 	}
+	else
+	{
+		cerr << filename << " can not be opened" << endl;
+		return;
+	}
 	try
 	{
 		for(currentFileIndex = 0; currentFileIndex < commands.size(); currentFileIndex++)

@@ -1,25 +1,9 @@
 
 
-
-function pow value power
-
-	create i 0
-	create powered value
-	update powered 1
-	while less i power
-		update powered mul powered value
-		update i add i 1
-	end while
-
-	return powered
-
-end function
-
-
 !suite de fibonacci en récursif
 
 function fib n
-	
+
 	if less n 0
 		return null
 	else
@@ -36,11 +20,22 @@ function fib n
 end function
 
 
-print "power of:"
 
-create number input
+create choice input "your choice (0 -> fibonacci | other -> surprise!): "
 
-call fib number
+if equal choice 0
 
-print fibonacci of number is ret
+	create number input "number: "
+	call fib number
+	print fibonacci of number is ret
+
+else
+
+	print you are grosse pute
+
+end
+
+print 'end' of program
+
+
 

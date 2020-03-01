@@ -330,7 +330,22 @@ string StdCommand::repeat_command(Args args)
 string StdCommand::input_command(Args args)
 {
 	string buff;
-	getline(cin, buff);
+	do
+	{
+		getline(cin, buff);
+	}while(buff.size() == 0);
+	return buff;
+}
+
+string StdCommand::input_command_1(Args args)
+{
+	string buff;
+	string msg = args;
+	do
+	{
+		cout << msg;
+		getline(cin, buff);
+	}while(buff.size() == 0);
 	return buff;
 }
 
@@ -610,6 +625,12 @@ string StdCommand::call_command(Args args)
 	return to_string(func.location);
 }
 
+string StdCommand::call_from_command(Args args)
+{
+	//to implement
+	return "";
+}
+
 string StdCommand::end_function_command(Args args)
 {
 	end_command_1(Tokens(nodeStack.back()));
@@ -661,6 +682,7 @@ void StdCommand::initStdCommands()
 	cresult.proto(result_command, 0);
 	crepeat.proto(repeat_command, -1);
 	cinput.proto(input_command, 0);
+	cinput.proto(input_command_1, 1);
 	cstr.proto(str_command, 1);
 	cif.proto(if_command, 1);
 	cend.proto(end_command_0, 0);

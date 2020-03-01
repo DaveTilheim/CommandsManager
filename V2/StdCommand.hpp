@@ -55,6 +55,7 @@ private:
 	static string result_command(Args args);
 	static string repeat_command(Args args);
 	static string input_command(Args args);
+	static string input_command_1(Args args);
 	static string str_command(Args args);
 	static string if_command(Args args);
 	static string begin_command_0(Args args);
@@ -73,6 +74,7 @@ private:
 	static string function_command(Args args);
 	static string return_command(Args args);
 	static string call_command(Args args);
+	static string call_from_command(Args args);
 	static string end_function_command(Args args);
 	static string ret_command_0(Args args);
 	static string ret_command_1(Args args);

@@ -9,9 +9,14 @@
 
 int main(int argc, char const *argv[])
 {
+	if(argc < 2)
+	{
+		cerr << "file required" << endl;
+		exit(1);
+	}
 	StdCommand::initStdCommands();
 	//Prompt::run(">>> ");
-	Command::exeFile("main.lg");
+	Command::exeFile(argv[1]);
 
 
 	return 0;
