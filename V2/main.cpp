@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
 	}
 	StdCommand::initStdCommands();
 	//Prompt::run(">>> ");
-	Command::exeFile(argv[1]);
+	Command::exeFile(argv[1], StdCommand::preInterpretation);
 
 
 	return 0;

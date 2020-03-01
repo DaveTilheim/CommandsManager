@@ -1,0 +1,19 @@
+
+function printx msg n
+
+	create i 0
+
+	while less i n
+		print msg i
+		update i add i 1
+	end while
+
+end function
+
+
+function hello name
+
+	print Hello name !
+
+end function
+

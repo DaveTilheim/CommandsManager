@@ -80,6 +80,7 @@ private:
 	static string ret_command_1(Args args);
 public:
 	static void initStdCommands();
+	static bool preInterpretation(string &command);
 };
 
 

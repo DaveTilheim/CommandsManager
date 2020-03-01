@@ -393,7 +393,7 @@ string Command::exeInput() noexcept(false)
 	return Command::exe(buf);
 }
 
-void Command::exeFile(string filename)
+void Command::exeFile(string filename, function<bool(string& cmd)> preproc)
 {
 	ifstream file(filename);
 	vector<string>& commands = Command::commandFileBuffer;
@@ -402,13 +402,7 @@ void Command::exeFile(string filename)
 		string command;
 		while(getline(file, command))
 		{
-			int i = 0;
-			for(i = 0; i < command.size(); i++)
-			{
-				if(command[i] != '\t') break;
-			}
-			command.erase(0, i);
-			if(command.size() and command[0] != '!')
+			if(preproc(command))
 				commands.push_back(command);
 		}
 		file.close();

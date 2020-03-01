@@ -56,7 +56,7 @@ public:
 	Command& operator=(const Command&) = delete;
 	static string exe(string scommand) noexcept(false);
 	static string exeInput() noexcept(false);
-	static void exeFile(string filename);
+	static void exeFile(string filename, function<bool(string& cmd)> preproc=[](string&){return true;});
 	static vector<string>& getFileBuffer();
 	static map<string, Command *>& getAll();
 	static string getLastResult();

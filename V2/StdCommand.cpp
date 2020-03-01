@@ -574,7 +574,7 @@ string StdCommand::function_command(Args args)
 	if(functionMap.find(fname) != functionMap.end())
 	{
 		const __Function& func = functionMap[fname];
-		if(arguments.count() != func.args.size()) throw CommandException(to_string(func.args.size()) + " gave but expected " + to_string(func.nargs));
+		if(arguments.count() != func.args.size())throw CommandException(to_string(func.args.size()) + " gave but expected " + to_string(func.nargs));
 		begin_command_0(args);
 		nodeStack.push_back(root.getCurrentName());
 		for(int i = 0; i < func.nargs; i++)
@@ -734,4 +734,120 @@ void StdCommand::initStdCommands()
 	ccall.arm();
 	cret.arm();
 	cless.arm();
+}
+
+
+vector<string> importedFiles;
+string import_command_1(Args args)
+{
+	string filename = args;
+	for(auto f : importedFiles)
+	{
+		if(f == filename)
+		{
+			return "";
+		}
+	}
+	ifstream file(filename);
+	if(file.is_open())
+	{
+		importedFiles.push_back(filename);
+		string buf;
+		while(getline(file, buf))
+		{
+			if(StdCommand::preInterpretation(buf))
+			{
+				Command::getFileBuffer().push_back(buf);
+			}
+		}
+		file.close();
+	}
+	else
+	{
+		cout << "can not import '" << filename << "'" << endl;
+	}
+	return "";
+}
+
+vector<string> importedFunctions;
+string import_command_2(Args args)
+{
+	string fname = args;
+	string filename = args;
+	for(auto f : importedFunctions)
+	{
+		if(f == fname)
+		{
+			return "";
+		}
+	}
+	ifstream file(filename);
+	if(file.is_open())
+	{
+		importedFiles.push_back(filename);
+		string buf;
+		bool findFunc = false;
+		while(getline(file, buf))
+		{
+			Tokens tmp(buf);
+			if(not findFunc)
+			{
+				if(tmp.count() >= 2 and tmp[0] == "function")
+				{
+					if(tmp[1] == fname)
+					{
+						Command::getFileBuffer().push_back(buf);
+						findFunc = true;
+						importedFunctions.push_back(fname);
+					}
+				}
+			}
+			else
+			{
+				if(tmp.count() >= 2 and tmp[0] == "end" and tmp[1] == "function")
+				{
+					Command::getFileBuffer().push_back(buf);
+					break;
+				}
+				if(StdCommand::preInterpretation(buf))
+				{
+					Command::getFileBuffer().push_back(buf);
+				}
+			}
+		}
+		if(not findFunc)
+		{
+			cout << "can not import " << fname << " from " << filename << " (function not exists)" << endl;
+		}
+		file.close();
+	}
+	else
+	{
+		cout << "can not import " << fname << " from " << filename << " (file not exists)" << endl;
+	}
+	return "";
+}
+
+bool StdCommand::preInterpretation(string& command)
+{
+	int i;
+	
+	for(i = 0; i < command.size(); i++)
+	{
+		if(command[i] != '\t') break;
+	}
+	command.erase(0, i);
+	if((command.size() and command[0] == '!') or command.size() == 0)
+		return false;
+	Tokens precom(command);
+	Command cimport("import");
+	cimport.proto(import_command_1, 1);
+	cimport.proto(import_command_2, 2);
+	if((string)precom == "import")
+	{
+		Tokens args = precom.partial();
+		cimport.call(args);
+		return false;
+	}
+	return true;
 }

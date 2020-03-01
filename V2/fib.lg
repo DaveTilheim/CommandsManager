@@ -1,0 +1,20 @@
+import mode.lg
+!suite de fibonacci en récursif
+
+function fib n
+
+	if less n 0
+		return null
+	else
+		if less n 2
+			return n
+		end
+	end
+
+	call fib sub n 1
+	call fib sub n 2
+	
+	return add ret:0 ret
+
+end function
+
