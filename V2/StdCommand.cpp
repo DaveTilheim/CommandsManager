@@ -652,8 +652,8 @@ string StdCommand::ret_command_1(Args args)
 {
 	int i = args;
 	if(returnValues.size() <= i or i < 0) return "null";
-	string ret = returnValues[i];
-	returnValues.erase(returnValues.begin() + i);
+	string ret = returnValues[returnValues.size()-i-1];
+	returnValues.erase(returnValues.begin() + (returnValues.size()-i-1));
 	return ret;
 }
 

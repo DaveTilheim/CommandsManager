@@ -1,4 +1,4 @@
-import mode.lg
+
 !suite de fibonacci en récursif
 
 function fib n

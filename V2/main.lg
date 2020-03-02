@@ -1,12 +1,14 @@
-import mode.lg
+import printx mode.lg
 import fib.lg
 
 
 
 
-call printx "Hello world!" 5
-call hello Arthur
-call fib 15
+create n input "fibonacci of: "
+
+
+call fib n
+
 
 print ret
 
