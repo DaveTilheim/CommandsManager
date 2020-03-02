@@ -1,0 +1,25 @@
+
+
+function print_matrix m numberLine numberColumn
+
+	create i 0
+
+	while less i numberLine
+
+		create j 0
+
+		while less j numberColumn
+
+			print read read m i j " "
+			update j add j 1
+
+		end while
+
+		println
+		update i add i 1
+
+	end while
+
+end function
+
+

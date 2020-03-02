@@ -1,20 +1,14 @@
 import printx mode.lg
 import fib.lg
+import matrix.lg
+
+create test 0
+
+create vector split matrix repeat 10 "str create vector split cat line div test 10 repeat 15 'update' test 'add' test 1"
+
+print memory
+
+println
 
 
-
-
-create n input "fibonacci of: "
-
-
-call fib n
-
-
-print ret
-
-
-
-print 'end' of program
-
-
-
+call print_matrix matrix 10 15

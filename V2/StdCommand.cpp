@@ -5,6 +5,7 @@ Command StdCommand::cexit = Command("exit");
 Command StdCommand::ccreate = Command("create");
 Command StdCommand::cread = Command("read");
 Command StdCommand::cprint = Command("print");
+Command StdCommand::cprintln = Command("println");
 Command StdCommand::cupdate = Command("update");
 Command StdCommand::ctype = Command("type");
 Command StdCommand::cadd = Command("add");
@@ -29,6 +30,7 @@ Command StdCommand::cfunction = Command("function");
 Command StdCommand::creturn = Command("return");
 Command StdCommand::ccall = Command("call");
 Command StdCommand::cret = Command("ret");
+Command StdCommand::ccat = Command("cat");
 Node StdCommand::root = Node(nullptr, "root");
 int StdCommand::nodeCounter = 0;
 map<string, int> StdCommand::labels = map<string, int>();
@@ -113,14 +115,23 @@ string StdCommand::create_vector_command(Args args)
 	return id;
 }
 
+string StdCommand::create_vector_split_command(Args args)
+{
+	string id = args;
+	string values = args;
+	Tokens newArgs(id + " " + values);
+	return create_vector_command(newArgs);
+}
+
 string StdCommand::read_command(Args args)
 {
 	string id = args;
 	Memory& mem = root.readMemory(id);
+	//cout << "READ: " << id << " " << mem.reads() << endl;
 	return mem.reads();
 }
 
-string StdCommand::read_vector_command(Args args)
+string StdCommand::read_command_2(Args args)
 {
 	string id = args;
 	VectorMemory& vec = *dynamic_cast<VectorMemory *>(&root.readMemory(id));
@@ -170,6 +181,52 @@ string StdCommand::update_command(Args args)
 	return id;
 }
 
+string StdCommand::update_command_3(Args args)
+{
+	Token id = args;
+	int index = args;
+	Token value = args;
+	Memory& mem = root.readMemory(id);
+	if(root.contains(value))
+		value = read_command(value);
+	erase_indentifier(value);
+	string type = Memory::type(value);
+	string memType = mem.getType();
+	if(memType == "Vector")
+	{
+		Memory& slot = dynamic_cast<VectorMemory *>(&mem)->get(index);
+		memType = slot.getType();
+		if(memType == "Integer")
+		{
+			if(type == "Float") slot = (int)atof(value.c_str());
+			else if(type == "Integer") slot = atoi(value.c_str());
+			else throw CommandException(value + " is " + type + ", " + memType + " expected");
+			return to_string(atoi(value.c_str()));
+		}
+		else if(memType == "Float")
+		{
+			if(type == "Float") slot = atof(value.c_str());
+			else if(type == "Integer") slot = (double)atoi(value.c_str());
+			else throw CommandException(value + " is " + type + ", " + memType + " expected");
+			return to_string(atof(value.c_str()));
+		}
+		else if(memType == "String")
+		{
+			slot = value;
+		}
+		else if(memType == "Vector")
+		{
+			Tokens toks = value;
+			dynamic_cast<VectorMemory *>(&slot)->clear();
+			while(not toks.end())
+			{
+				dynamic_cast<VectorMemory *>(&slot)->add(Memory::create(toks));
+			}
+		}
+	}
+	return id;
+}
+
 string StdCommand::type_command(Args args)
 {
 	string expr = args;
@@ -185,15 +242,28 @@ string StdCommand::print_command(Args args)
 	{
 		string elm = args[i];
 		if(root.contains(elm))
-			cout << read_command(elm);
+			cerr << read_command(elm);
 		else
 		{
 			erase_indentifier(elm);
-			cout <<elm;
+			cerr <<elm;
 		}
-		if(i != args.count() - 1) cout << " ";
+		if(i != args.count() - 1) cerr << " ";
 	}
-	cout << endl;
+	
+	return "";
+}
+
+string StdCommand::println_command_U(Args args)
+{
+	print_command(args);
+	cerr << endl;
+	return "";
+}
+
+string StdCommand::println_command(Args args)
+{
+	cerr << endl;
 	return "";
 }
 
@@ -202,7 +272,7 @@ string StdCommand::print_memory_command(Args args)
 	auto hashMap = root.readAllMemory();
 	for(auto mem : hashMap)
 	{
-		cout << mem.first << " " << mem.second->reads() << " " << mem.second->getType() << endl;
+		cerr << mem.first << " " << mem.second->reads() << " " << mem.second->getType() << endl;
 	}
 	return "";
 }
@@ -315,16 +385,23 @@ string StdCommand::result_command(Args args)
 
 string StdCommand::repeat_command(Args args)
 {
+	//cerr << "ARGS: " << args << endl;
 	int n = args;
 	string cmd;
 	if(args.count() <= 1) throw CommandException("has " + to_string(args.count()) + " args, expected 2 min");
 	for(int i = args.getIndex(); i < args.count(); i++) cmd += args[i] + " ";
 	cmd.erase(cmd.size()-1);
+	string buf = "";
 	for(int i = 0; i < n; i++)
 	{
-		Command::exe(cmd);
+		//cerr << "ITER: " << i << endl;
+		//cerr << "EXE: " << cmd << endl;
+		buf += Command::exe(cmd) +  " ";
+		//cerr << "OUT: " << buf << endl;
 	}
-	return to_string(n);
+	if(buf.back() == ' ') buf.pop_back();
+	//cerr << "END: " << buf << endl;
+	return buf;
 }
 
 string StdCommand::input_command(Args args)
@@ -343,7 +420,7 @@ string StdCommand::input_command_1(Args args)
 	string msg = args;
 	do
 	{
-		cout << msg;
+		cerr << msg;
 		getline(cin, buff);
 	}while(buff.size() == 0);
 	return buff;
@@ -495,7 +572,7 @@ string StdCommand::label_command(Args args)
 	string name = args;
 	if(labels.find(name) == labels.end())
 	{
-		//cout << "Label (" + name + ") set at instruction n°" << Command::getFileIndex() << endl;
+		//cerr << "Label (" + name + ") set at instruction n°" << Command::getFileIndex() << endl;
 		labels[name] = Command::getFileIndex();
 		return name;
 	}
@@ -581,7 +658,7 @@ string StdCommand::function_command(Args args)
 		{
 			Tokens toks(arguments[i]);
 			toks.getTokens().push_back(func.args[i]);
-			//cout << "create " + arguments[i] + " " + func.args[i] << endl;
+			//cerr << "create " + arguments[i] + " " + func.args[i] << endl;
 			create_command(toks);
 		}
 	}
@@ -657,6 +734,19 @@ string StdCommand::ret_command_1(Args args)
 	return ret;
 }
 
+string StdCommand::cat_command(Args args)
+{
+	//cerr << "CAT: " << args << endl;
+	string first = args;
+	string second = args;
+	if(root.contains(first)) first = read_command(first);
+	erase_indentifier(first);
+	if(root.contains(second)) second = read_command(second);
+	erase_indentifier(second);
+	//cerr << "CAT: " << first << " : " << second << endl;
+	return first + second;
+}
+
 
 void StdCommand::initStdCommands()
 {
@@ -669,11 +759,15 @@ void StdCommand::initStdCommands()
 	cexit.proto(exit_command, 0);
 	ccreate.proto(create_command, 2);
 	ccreate.sub("vector").proto(create_vector_command, -1);
+	ccreate.sub("vector").sub("split").proto(create_vector_split_command, 2);
 	cread.proto(read_command, 1);
-	cread.sub("vector").proto(read_vector_command, 2);
+	cread.proto(read_command_2, 2);
 	cprint.proto(print_command, -1);
+	cprintln.proto(println_command, 0);
+	cprintln.proto(println_command_U, -1);
 	cprint.sub("memory").proto(print_memory_command, 0);
 	cupdate.proto(update_command, 2);
+	cupdate.proto(update_command_3, 3);
 	ctype.proto(type_command, 1);
 	cadd.proto(add_command, 2);
 	csub.proto(sub_command, 2);
@@ -704,12 +798,14 @@ void StdCommand::initStdCommands()
 	cret.proto(ret_command_0, 0);
 	cret.proto(ret_command_1, 1);
 	cless.proto(less_command, 2);
+	ccat.proto(cat_command, 2);
 
 
 	cexit.arm();
 	cread.arm();
 	ccreate.arm();
 	cprint.arm();
+	cprintln.arm();
 	cupdate.arm();
 	ctype.arm();
 	cadd.arm();
@@ -734,6 +830,7 @@ void StdCommand::initStdCommands()
 	ccall.arm();
 	cret.arm();
 	cless.arm();
+	ccat.arm();
 }
 
 
@@ -764,7 +861,7 @@ string import_command_1(Args args)
 	}
 	else
 	{
-		cout << "can not import '" << filename << "'" << endl;
+		cerr << "can not import '" << filename << "'" << endl;
 	}
 	return "";
 }
@@ -817,13 +914,13 @@ string import_command_2(Args args)
 		}
 		if(not findFunc)
 		{
-			cout << "can not import " << fname << " from " << filename << " (function not exists)" << endl;
+			cerr << "can not import " << fname << " from " << filename << " (function not exists)" << endl;
 		}
 		file.close();
 	}
 	else
 	{
-		cout << "can not import " << fname << " from " << filename << " (file not exists)" << endl;
+		cerr << "can not import " << fname << " from " << filename << " (file not exists)" << endl;
 	}
 	return "";
 }

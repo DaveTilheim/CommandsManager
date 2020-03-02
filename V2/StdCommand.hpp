@@ -12,6 +12,7 @@ private:
 	static Command ccreate;
 	static Command cread;
 	static Command cprint;
+	static Command cprintln;
 	static Command cupdate;
 	static Command ctype;
 	static Command cadd;
@@ -36,17 +37,22 @@ private:
 	static Command creturn;
 	static Command ccall;
 	static Command cret;
+	static Command ccat;
 	static Node root;
 	static int nodeCounter;
 	static map<string, int> labels;
 	static string exit_command(Args args);
 	static string create_command(Args args);
 	static string create_vector_command(Args args);
+	static string create_vector_split_command(Args args);
 	static string read_command(Args args);
-	static string read_vector_command(Args args);
+	static string read_command_2(Args args);
 	static string print_command(Args args);
+	static string println_command(Args args);
+	static string println_command_U(Args args);
 	static string print_memory_command(Args args);
 	static string update_command(Args args);
+	static string update_command_3(Args args);
 	static string type_command(Args args);
 	static string add_command(Args args);
 	static string sub_command(Args args);
@@ -78,6 +84,7 @@ private:
 	static string end_function_command(Args args);
 	static string ret_command_0(Args args);
 	static string ret_command_1(Args args);
+	static string cat_command(Args args);
 public:
 	static void initStdCommands();
 	static bool preInterpretation(string &command);
